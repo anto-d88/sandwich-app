@@ -1,4 +1,4 @@
-const productService = require('../services/productService');
+const supabase = require('../config/supabaseClient');
 const getCartTotal = require('../utils/getCartTotal');
 
 exports.getCartPage = (req, res) => {
@@ -11,8 +11,6 @@ exports.getCartPage = (req, res) => {
     total
   });
 };
-
-const supabase = require('../config/supabaseClient');
 
 exports.addToCart = async (req, res) => {
   try {
@@ -40,7 +38,6 @@ exports.addToCart = async (req, res) => {
     }
 
     const cart = req.session.cart || [];
-
     const existingItem = cart.find(item => item.id === productId);
 
     if (existingItem) {
@@ -55,7 +52,7 @@ exports.addToCart = async (req, res) => {
       cart.push({
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: Number(product.price),
         quantity
       });
     }
@@ -64,7 +61,7 @@ exports.addToCart = async (req, res) => {
 
     res.redirect('/cart');
   } catch (error) {
-    console.error(error);
+    console.error('Erreur addToCart:', error);
     res.status(500).send('Erreur panier');
   }
 };
