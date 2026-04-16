@@ -33,7 +33,6 @@ async function createCheckoutSession({ cart, customer }) {
 
   return session;
 }
-
 async function createTeamOrderCheckoutSession({ teamOrder, items }) {
   const line_items = items.map(item => ({
     price_data: {
