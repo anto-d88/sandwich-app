@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+
+    <section class="confirmation-box">
+
+      <span class="section-badge">Commande validée</span>
+
+      <h1>Merci pour votre commande !</h1>
+
+      <p>
+        Votre paiement a été confirmé et votre commande est en cours de traitement.
+      </p>
+
+      <p style="color:#16a34a; font-weight:700; margin-top:16px;">
+        ✔ Livraison incluse sur créneau fixe
+      </p>
+
+      <% if (order) { %>
+
+        <div style="margin-top:20px;">
+
+          <p><strong>Nom :</strong> <%= order.customer_name %></p>
+          <p><strong>Entreprise :</strong> <%= order.company_name || '—' %></p>
+          <p><strong>Adresse :</strong> <%= order.delivery_address %></p>
+          <p><strong>Créneau :</strong> <%= order.delivery_slot %></p>
+
+        </div>
+
+      <% } %>
+
+      <div style="margin-top:24px;">
+        <p>
+          Votre commande sera livrée directement sur votre lieu de travail
+          au créneau sélectionné.
+        </p>
+      </div>
+
+      <div style="margin-top:28px;">
+        <a href="/menu" class="btn btn-primary">Recommander</a>
+      </div>
+
+    </section>
+
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

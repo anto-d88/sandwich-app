@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container admin-page">
+    <section class="page-intro">
+      <span class="section-badge">Admin</span>
+      <h1>Dashboard admin</h1>
+      <p>Vue rapide des nouvelles commandes et des commandes équipe.</p>
+    </section>
+
+    <section class="admin-alerts-grid">
+      <article class="admin-alert-card">
+        <h2>Nouvelles commandes</h2>
+        <p class="admin-alert-number"><%= newOrdersCount %></p>
+        <p>Commandes simples avec statut <strong>nouvelle</strong>.</p>
+        <a href="/admin/orders" class="btn btn-primary">Voir</a>
+      </article>
+
+      <article class="admin-alert-card">
+        <h2>Commandes équipe ouvertes</h2>
+        <p class="admin-alert-number"><%= openTeamOrdersCount %></p>
+        <p>Commandes équipe à surveiller ou préparer.</p>
+        <a href="/admin/team-orders" class="btn btn-primary">Voir</a>
+      </article>
+    </section>
+
+    <section class="admin-orders-grid" style="margin-top: 24px;">
+      <article class="admin-order-card">
+        <h2>Commandes simples récentes</h2>
+
+        <% if (!recentOrders.length) { %>
+          <p>Aucune commande récente.</p>
+        <% } else { %>
+          <% recentOrders.forEach(order => { %>
+            <div class="checkout-item">
+              <div>
+                <strong>#<%= order.id %></strong><br>
+                <span><%= order.customer_name || 'Client' %></span>
+              </div>
+              <div>
+                <a href="/admin/orders/<%= order.id %>">Ouvrir</a>
+              </div>
+            </div>
+          <% }) %>
+        <% } %>
+      </article>
+
+      <article class="admin-order-card">
+        <h2>Commandes équipe récentes</h2>
+
+        <% if (!recentTeamOrders.length) { %>
+          <p>Aucune commande équipe récente.</p>
+        <% } else { %>
+          <% recentTeamOrders.forEach(teamOrder => { %>
+            <div class="checkout-item">
+              <div>
+                <strong>#<%= teamOrder.id %></strong><br>
+                <span><%= teamOrder.team_name %></span>
+              </div>
+              <div>
+                <a href="/admin/team-orders/<%= teamOrder.id %>">Ouvrir</a>
+              </div>
+            </div>
+          <% }) %>
+        <% } %>
+      </article>
+    </section>
+
+    <form action="/auth/logout" method="POST" style="margin-top: 24px;">
+      <button type="submit" class="btn btn-danger">Déconnexion</button>
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

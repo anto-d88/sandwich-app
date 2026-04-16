@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Résumé équipe</span>
+      <h1><%= teamOrder.team_name %></h1>
+      <p>Créneau : <strong><%= teamOrder.delivery_slot %></strong></p>
+      <p>Adresse : <strong><%= teamOrder.delivery_address %></strong></p>
+      <p>Statut : <strong><%= teamOrder.status %></strong></p>
+    </section>
+
+    <section class="checkout-box">
+      <h2>Résumé des commandes</h2>
+
+      <% if (!items.length) { %>
+        <p>Aucune commande pour le moment.</p>
+      <% } else { %>
+        <% items.forEach(item => { %>
+          <div class="checkout-item">
+            <div>
+              <strong><%= item.participant_name %></strong><br>
+              <span><%= item.product_name %> x <%= item.quantity %></span>
+            </div>
+            <div>
+              <%= (Number(item.unit_price) * Number(item.quantity)).toFixed(2).replace('.', ',') %> €
+            </div>
+          </div>
+        <% }) %>
+
+        <hr>
+        <p class="checkout-total"><strong>Total équipe : <%= total.toFixed(2).replace('.', ',') %> €</strong></p>
+
+        <% if (teamOrder.status !== 'payée') { %>
+          <form action="/team-order/<%= teamOrder.id %>/checkout" method="POST" style="margin-top: 20px;">
+            <button type="submit" class="btn btn-primary">Payer la commande d’équipe</button>
+          </form>
+        <% } else { %>
+          <p style="margin-top: 20px;"><strong>La commande d’équipe a déjà été payée.</strong></p>
+        <% } %>
+      <% } %>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

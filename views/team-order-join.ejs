@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Commande d’équipe</span>
+      <h1><%= teamOrder.team_name %></h1>
+      <p>Créneau : <strong><%= teamOrder.delivery_slot %></strong></p>
+      <p>Adresse : <strong><%= teamOrder.delivery_address %></strong></p>
+      <p>
+        <a href="/team-order/<%= teamOrder.id %>/summary" class="btn btn-secondary">Voir le résumé équipe</a>
+      </p>
+    </section>
+
+    <section class="checkout-box" style="margin-bottom: 24px;">
+      <h2>Ajouter sa commande</h2>
+
+      <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="checkout-form">
+        <input type="text" name="participant_name" placeholder="Votre prénom / nom" required>
+
+        <select name="product_id" required>
+          <option value="">Choisir un sandwich</option>
+          <% products.forEach(product => { %>
+            <option value="<%= product.id %>">
+              <%= product.name %> — <%= Number(product.price).toFixed(2).replace('.', ',') %> €
+            </option>
+          <% }) %>
+        </select>
+
+        <input type="number" name="quantity" value="1" min="1" required>
+
+        <button type="submit" class="btn btn-primary">Ajouter à la commande d’équipe</button>
+      </form>
+    </section>
+
+    <section class="checkout-box">
+      <h2>Participants déjà ajoutés</h2>
+
+      <% if (!items.length) { %>
+        <p>Aucune commande ajoutée pour le moment.</p>
+      <% } else { %>
+        <% items.forEach(item => { %>
+          <div class="checkout-item">
+            <div>
+              <strong><%= item.participant_name %></strong><br>
+              <span><%= item.product_name %> x <%= item.quantity %></span>
+            </div>
+            <div>
+              <%= (Number(item.unit_price) * Number(item.quantity)).toFixed(2).replace('.', ',') %> €
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container admin-page">
+    <section class="page-intro">
+      <span class="section-badge">Admin</span>
+      <h1>Liste des commandes</h1>
+      <p>Suivi rapide des commandes et de leur état.</p>
+    </section>
+
+    <% if (!orders.length) { %>
+      <div class="empty-box">
+        <p>Aucune commande pour le moment.</p>
+      </div>
+    <% } else { %>
+      <div class="admin-orders-grid">
+        <% orders.forEach(order => { %>
+          <article class="admin-order-card">
+            <div class="admin-order-top">
+              <p><strong>Commande #<%= order.id %></strong></p>
+              <span class="status-badge status-<%= (order.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-') %>">
+                <%= order.status %>
+              </span>
+            </div>
+
+            <p>Client : <%= order.customer_name %></p>
+            <p>Entreprise : <%= order.company_name || '—' %></p>
+            <p>Adresse : <%= order.delivery_address || '—' %></p>
+            <p>Créneau : <%= order.delivery_slot || '—' %></p>
+            <p>Total : <%= Number(order.total_amount).toFixed(2).replace('.', ',') %> €</p>
+
+            <a href="/admin/orders/<%= order.id %>" class="btn btn-secondary">Voir le détail</a>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="home-page">
+    <section class="hero container">
+      <div class="hero-grid">
+        <div class="hero__content">
+          <span class="hero__badge">Livraison rapide pour équipes & call centers</span>
+          <h1>Pause déjeuner express pour équipes pressées</h1>
+          <p class="hero__text">
+            Commandez en 30 secondes. Livraison rapide sur votre lieu de travail,
+            avec des créneaux pensés pour les bureaux et centres d’appels.
+          </p>
+
+          <div class="hero__actions">
+            <a href="/menu" class="btn btn-primary">Commander maintenant</a>
+            <a href="/team-order/create" class="btn btn-secondary">Commande d’équipe</a>
+          </div>
+
+          <p style="color:#16a34a; font-weight:700;">
+  ✔ Livraison incluse sur créneau fixe
+</p>
+
+          <div class="hero__highlights">
+            <div class="highlight-card">
+              <strong>30 sec</strong>
+              <span>pour commander</span>
+            </div>
+            <div class="highlight-card">
+              <strong>Créneaux fixes</strong>
+              <span>pour éviter l’attente</span>
+            </div>
+            <div class="highlight-card">
+              <strong>Livraison bureau</strong>
+              <span>simple et rapide</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-side-card">
+          <div class="hero-side-card__top">
+            <span class="section-badge">Commande express</span>
+            <h2>Une pause sans perte de temps</h2>
+            <p>
+              Pensé pour les équipes, les open spaces et les call centers qui ont besoin
+              d’un service rapide, clair et fiable.
+            </p>
+          </div>
+
+          <div class="hero-side-list">
+            <div class="hero-side-item">
+              <strong>1.</strong>
+              <div>
+                <h3>Choisissez</h3>
+                <p>Des sandwichs froids simples, rapides et faciles à commander.</p>
+              </div>
+            </div>
+
+            <div class="hero-side-item">
+              <strong>2.</strong>
+              <div>
+                <h3>Payez en ligne</h3>
+                <p>Validation rapide avec paiement sécurisé.</p>
+              </div>
+            </div>
+
+            <div class="hero-side-item">
+              <strong>3.</strong>
+              <div>
+                <h3>Recevez au bureau</h3>
+                <p>Livraison sur créneau pour limiter l’attente et simplifier la pause déjeuner.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="advantages container">
+      <h2>Pourquoi choisir Call & Snack ?</h2>
+
+      <div class="advantages-grid">
+        <article class="advantage-box">
+          <h3>Commande ultra simple</h3>
+          <p>
+            Une interface rapide à utiliser, pensée pour les pauses courtes et les équipes qui n’ont pas de temps à perdre.
+          </p>
+        </article>
+
+        <article class="advantage-box">
+          <h3>Livraison optimisée</h3>
+          <p>
+            Des créneaux clairs pour limiter les retards et fluidifier la réception sur site.
+          </p>
+        </article>
+
+        <article class="advantage-box">
+          <h3>Adapté aux call centers</h3>
+          <p>
+            Commande express, sandwiches froids rapides à préparer, et logique pensée pour les pauses déjeuner en entreprise.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="steps-section container">
+      <div class="page-intro">
+        <span class="section-badge">Comment ça marche</span>
+        <h2>Un fonctionnement simple et rapide</h2>
+        <p>Le service a été pensé pour éviter les frictions et aller droit au but.</p>
+      </div>
+
+      <div class="steps-grid">
+        <article class="step-card">
+          <span class="step-number">01</span>
+          <h3>Je choisis mon sandwich</h3>
+          <p>Menu clair, produits rapides à repérer, commande sans détour.</p>
+        </article>
+
+        <article class="step-card">
+          <span class="step-number">02</span>
+          <h3>Je valide en ligne</h3>
+          <p>Paiement sécurisé et confirmation immédiate.</p>
+        </article>
+
+        <article class="step-card">
+          <span class="step-number">03</span>
+          <h3>Je reçois sur mon lieu de travail</h3>
+          <p>Livraison sur créneau, pensée pour les bureaux et équipes.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="proof container">
+      <div class="proof-box">
+        <h2>Une solution pensée pour les équipes</h2>
+        <p>
+          Plus qu’un simple sandwich, nous proposons une pause déjeuner rapide,
+          claire, fiable et adaptée au rythme des bureaux.
+        </p>
+
+        <ul class="proof-list">
+          <li>✔ Livraison optimisée pour bureaux</li>
+          <li>✔ Créneaux fixes pour mieux s’organiser</li>
+          <li>✔ Commande simple et rapide</li>
+          <li>✔ Idéal pour équipes et call centers</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="cta-banner container">
+      <div>
+        <h2>Prêt à commander ?</h2>
+        <p>Découvrez notre menu et passez votre commande en quelques clics.</p>
+      </div>
+      <a href="/menu" class="btn btn-primary">Voir le menu</a>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

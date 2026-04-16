@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+
+    <section class="page-intro">
+      <span class="section-badge">Panier</span>
+      <h1>Votre commande</h1>
+      <p>Vérifiez vos produits avant de passer au paiement.</p>
+    </section>
+
+    <% if (!cart.length) { %>
+      <div class="empty-box">
+        <p>Votre panier est vide.</p>
+        <a href="/menu" class="btn btn-primary">Voir le menu</a>
+      </div>
+    <% } else { %>
+
+      <div class="cart-layout">
+
+        <div class="cart-list">
+
+          <% let total = 0; %>
+
+          <% cart.forEach(item => { %>
+            <% const lineTotal = item.price * item.quantity; %>
+            <% total += lineTotal; %>
+
+            <div class="cart-item">
+              <div>
+                <strong><%= item.name %></strong><br>
+                <span><%= item.quantity %> x <%= Number(item.price).toFixed(2).replace('.', ',') %> €</span>
+              </div>
+
+              <div>
+                <strong><%= lineTotal.toFixed(2).replace('.', ',') %> €</strong>
+
+                <form action="/cart/remove/<%= item.id %>" method="POST">
+                  <button class="btn btn-danger" style="margin-top:8px;">Supprimer</button>
+                </form>
+              </div>
+            </div>
+          <% }) %>
+
+        </div>
+
+        <div class="cart-summary">
+
+          <h2>Total</h2>
+
+          <p class="checkout-total">
+            <strong><%= total.toFixed(2).replace('.', ',') %> €</strong>
+          </p>
+
+          <p style="color:#16a34a; font-weight:700;">
+            ✔ Livraison incluse sur créneau fixe
+          </p>
+
+          <p style="margin-top:10px;">
+            ✔ Paiement sécurisé<br>
+            ✔ Livraison incluse sur créneau fixe<br>
+            ✔ Service rapide bureau
+          </p>
+
+          <a href="/cart/checkout" class="btn btn-primary" style="margin-top:18px;">
+            Passer au paiement
+          </a>
+
+          <a href="/menu" class="btn btn-secondary" style="margin-top:10px;">
+            Continuer mes achats
+          </a>
+
+        </div>
+
+      </div>
+
+    <% } %>
+
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

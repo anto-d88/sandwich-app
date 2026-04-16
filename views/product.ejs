@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container product-page">
+    <div class="product-detail-card">
+      <div class="product-detail-image-wrap">
+        <img
+          src="<%= product.image_url || '/images/default-product.jpg' %>"
+          alt="<%= product.name %>"
+          class="product-detail-image"
+        >
+      </div>
+
+      <div class="product-detail-content">
+        <span class="product-category"><%= product.category || 'menu' %></span>
+        <h1><%= product.name %></h1>
+        <p class="product-detail-description"><%= product.description %></p>
+        <p class="product-detail-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
+
+        <form action="/cart/add" method="POST" class="product-detail-form">
+          <input type="hidden" name="productId" value="<%= product.id %>">
+          <label for="quantity">Quantité</label>
+          <input id="quantity" type="number" name="quantity" value="1" min="1">
+          <button type="submit" class="btn btn-primary">Ajouter au panier</button>
+        </form>
+
+        <div class="hero__actions">
+          <a href="/menu" class="btn btn-secondary">Retour au menu</a>
+          <a href="/cart" class="btn btn-primary">Voir le panier</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

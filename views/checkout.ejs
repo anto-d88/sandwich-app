@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container checkout-page">
+    <section class="page-intro">
+      <span class="section-badge">Paiement</span>
+      <h1>Finaliser la commande</h1>
+      <p>Renseignez vos informations pour lancer le paiement sécurisé.</p>
+    </section>
+
+    <div class="checkout-layout">
+      <section class="checkout-box">
+        <h2>Récapitulatif</h2>
+
+        <% cart.forEach(item => { %>
+          <div class="checkout-item">
+            <p>
+              <strong><%= item.name %></strong> x <%= item.quantity %>
+            </p>
+            <p><%= (Number(item.price) * item.quantity).toFixed(2).replace('.', ',') %> €</p>
+          </div>
+        <% }) %>
+
+        <hr>
+        <p class="checkout-total"><strong>Total : <%= total.toFixed(2).replace('.', ',') %> €</strong></p>
+
+        <p style="color:#16a34a; font-weight:700; margin-top:16px;">
+          ✔ Livraison incluse • Votre commande sera livrée sur le créneau choisi
+        </p>
+      </section>
+
+      <section class="checkout-box">
+        <h2>Informations de livraison</h2>
+
+        <form action="/order/create-checkout-session" method="POST" class="checkout-form">
+          <input type="text" name="customer_name" placeholder="Nom complet" required>
+          <input type="text" name="customer_phone" placeholder="Téléphone" required>
+          <input type="email" name="customer_email" placeholder="Email" required>
+          <input type="text" name="company_name" placeholder="Nom du call center / entreprise">
+          <input type="text" name="delivery_address" placeholder="Adresse de livraison" required>
+
+          <select name="delivery_slot" required>
+            <option value="">Choisir un créneau</option>
+            <option value="11:30">11:30</option>
+            <option value="12:00">12:00</option>
+            <option value="12:30">12:30</option>
+            <option value="13:00">13:00</option>
+          </select>
+
+          <button type="submit" class="btn btn-primary">Payer maintenant</button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

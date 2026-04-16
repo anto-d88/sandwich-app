@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main>
+    <h1>Commande #<%= order.id %></h1>
+
+    <p><strong>Client :</strong> <%= order.customer_name %></p>
+    <p><strong>Téléphone :</strong> <%= order.customer_phone %></p>
+    <p><strong>Email :</strong> <%= order.customer_email %></p>
+    <p><strong>Entreprise :</strong> <%= order.company_name || '—' %></p>
+    <p><strong>Adresse :</strong> <%= order.delivery_address %></p>
+    <p><strong>Créneau :</strong> <%= order.delivery_slot || '—' %></p>
+    <p><strong>Statut :</strong> <%= order.status %></p>
+    <p><strong>Total :</strong> <%= Number(order.total_amount).toFixed(2).replace('.', ',') %> €</p>
+
+    <hr>
+
+    <h2>Produits</h2>
+
+    <% if (!order.items || !order.items.length) { %>
+      <p>Aucun article.</p>
+    <% } else { %>
+      <% order.items.forEach(item => { %>
+        <div style="margin-bottom:12px;">
+          <p>
+            <strong><%= item.product_name %></strong> —
+            Qté : <%= item.quantity %> —
+            PU : <%= Number(item.unit_price).toFixed(2).replace('.', ',') %> €
+          </p>
+        </div>
+      <% }) %>
+    <% } %>
+
+    <hr>
+
+    <h2>Changer le statut</h2>
+
+    <form action="/admin/orders/<%= order.id %>/status" method="POST">
+      <select name="status" required>
+        <option value="nouvelle" <%= order.status === 'nouvelle' ? 'selected' : '' %>>nouvelle</option>
+        <option value="en préparation" <%= order.status === 'en préparation' ? 'selected' : '' %>>en préparation</option>
+        <option value="en livraison" <%= order.status === 'en livraison' ? 'selected' : '' %>>en livraison</option>
+        <option value="livrée" <%= order.status === 'livrée' ? 'selected' : '' %>>livrée</option>
+      </select>
+
+      <button type="submit">Mettre à jour</button>
+    </form>
+
+    <p style="margin-top:20px;">
+      <a href="/admin/orders">Retour à la liste</a>
+    </p>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

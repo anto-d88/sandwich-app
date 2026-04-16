@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Commande d’équipe</span>
+      <h1>Créer une commande d’équipe</h1>
+      <p>Créez une commande groupée et partagez-la avec vos collègues.</p>
+      <p style="margin-top: 18px; font-weight: 700;">
+  Sandwichs frais • Livraison incluse sur créneau fixe • Service pensé pour les équipes
+</p>
+    </section>
+
+    <section class="checkout-box">
+      <form action="/team-order/create" method="POST" class="checkout-form">
+        <input type="text" name="team_name" placeholder="Nom de l’équipe / service" required>
+        <input type="text" name="contact_name" placeholder="Nom du contact" required>
+        <input type="text" name="contact_phone" placeholder="Téléphone du contact" required>
+        <input type="text" name="delivery_address" placeholder="Adresse de livraison" required>
+
+        <select name="delivery_slot" required>
+          <option value="">Choisir un créneau</option>
+          <option value="11:30">11:30</option>
+          <option value="12:00">12:00</option>
+          <option value="12:30">12:30</option>
+          <option value="13:00">13:00</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary">Créer la commande d’équipe</button>
+      </form>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

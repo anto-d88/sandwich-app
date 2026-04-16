@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+  <%- include('partials/page-banner', {
+  bannerImage: '/images/banner-menu.jpg',
+  bannerBadge: 'Menu du jour',
+  bannerTitle: 'Nos sandwichs baguette',
+  bannerText: 'Des sandwichs froids simples, frais et rapides à commander pour les équipes.'
+}) %>
+
+  <main class="menu-page container">
+    <section class="page-intro">
+      <span class="section-badge">Commande rapide</span>
+      <h1>Notre menu</h1>
+      <p>
+        Des produits simples, rapides à choisir et pensés pour les pauses déjeuner en entreprise.
+      </p>
+    </section>
+
+    <section class="menu-top-banner">
+      <div>
+        <strong>Menu équipe à partir de 8€</strong>
+        <p style="margin-top: 18px; font-weight: 700;">
+  Sandwichs frais • Livraison incluse sur créneau fixe • Service pensé pour les équipes
+</p>
+      </div>
+      <a href="/cart" class="btn btn-secondary">Voir mon panier</a>
+    </section>
+
+    <section class="products-grid">
+      <% products.forEach(product => { %>
+        <article class="product-card product-card--pro">
+          <a href="/product/<%= product.id %>" class="product-image-wrap">
+            <img
+              src="<%= product.image_url || '/images/default-product.jpg' %>"
+              alt="<%= product.name %>"
+              class="product-image"
+            >
+          </a>
+
+          <div class="product-card__content">
+            <span class="product-category"><%= product.category || 'menu' %></span>
+            <h2><%= product.name %></h2>
+            <p class="product-description"><%= product.description %></p>
+        <% if (product.stock_quantity <= 0) { %>
+  <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
+
+<% } else if (product.stock_quantity <= 3) { %>
+  <p class="stock-warning stock-warning--danger">⚠️ Plus que quelques sandwichs disponibles</p>
+
+<% } else if (product.stock_quantity <= 6) { %>
+  <p class="stock-warning">⏳ Stock limité aujourd’hui</p>
+
+<% } else { %>
+  <p class="stock-ok">✔ Disponible</p>
+<% } %>
+<% if (product.stock_quantity <= 3) { %>
+  <span class="product-badge">🔥 Très demandé</span>
+<% } %>
+            <div class="product-bottom">
+              <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %>€</p>
+
+           
+                
+                <% if (product.stock_quantity <= 0) { %>
+                <button class="btn btn-danger" disabled>Rupture de stock</button>
+                <% } else { %>
+                <form action="/cart/add" method="POST" class="product-form-inline">
+                <input type="hidden" name="id" value="<%= product.id %>">
+    
+                 <input 
+                   type="number" 
+                   name="quantity" 
+                   value="1" 
+                   min="1" 
+                   max="<%= product.stock_quantity %>" 
+                   class="qty-input"
+                 >
+
+                 <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+              <% } %>
+            </div>
+
+            <a href="/product/<%= product.id %>" class="product-link">Voir le détail</a>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

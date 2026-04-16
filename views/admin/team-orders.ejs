@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container admin-page">
+    <section class="page-intro">
+      <span class="section-badge">Admin</span>
+      <h1>Commandes équipe</h1>
+      <p>Suivi des commandes groupées.</p>
+    </section>
+
+    <% if (!teamOrders.length) { %>
+      <div class="empty-box">
+        <p>Aucune commande équipe pour le moment.</p>
+      </div>
+    <% } else { %>
+      <div class="admin-orders-grid">
+        <% teamOrders.forEach(teamOrder => { %>
+          <article class="admin-order-card">
+            <div class="admin-order-top">
+              <p><strong>Commande équipe #<%= teamOrder.id %></strong></p>
+              <span class="status-badge status-<%= (teamOrder.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-') %>">
+                <%= teamOrder.status %>
+              </span>
+            </div>
+
+            <p>Équipe : <%= teamOrder.team_name %></p>
+            <p>Contact : <%= teamOrder.contact_name || '—' %></p>
+            <p>Créneau : <%= teamOrder.delivery_slot || '—' %></p>
+            <p>Adresse : <%= teamOrder.delivery_address || '—' %></p>
+
+            <a href="/admin/team-orders/<%= teamOrder.id %>" class="btn btn-secondary">Voir le détail</a>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

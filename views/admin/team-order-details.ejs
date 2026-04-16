@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container admin-page">
+    <section class="page-intro">
+      <span class="section-badge">Commande équipe</span>
+      <h1><%= teamOrder.team_name %></h1>
+      <p>Statut : <strong><%= teamOrder.status %></strong></p>
+    </section>
+
+    <section class="checkout-box">
+      <p><strong>Contact :</strong> <%= teamOrder.contact_name || '—' %></p>
+      <p><strong>Téléphone :</strong> <%= teamOrder.contact_phone || '—' %></p>
+      <p><strong>Adresse :</strong> <%= teamOrder.delivery_address %></p>
+      <p><strong>Créneau :</strong> <%= teamOrder.delivery_slot || '—' %></p>
+    </section>
+
+    <section class="checkout-box" style="margin-top: 20px;">
+      <h2>Participants</h2>
+
+      <% if (!teamOrder.items.length) { %>
+        <p>Aucun participant pour le moment.</p>
+      <% } else { %>
+        <% let total = 0; %>
+        <% teamOrder.items.forEach(item => { %>
+          <% total += Number(item.unit_price) * Number(item.quantity); %>
+          <div class="checkout-item">
+            <div>
+              <strong><%= item.participant_name %></strong><br>
+              <span><%= item.product_name %> x <%= item.quantity %></span>
+            </div>
+            <div>
+              <%= (Number(item.unit_price) * Number(item.quantity)).toFixed(2).replace('.', ',') %> €
+            </div>
+          </div>
+        <% }) %>
+
+        <hr>
+        <p class="checkout-total"><strong>Total équipe : <%= total.toFixed(2).replace('.', ',') %> €</strong></p>
+      <% } %>
+    </section>
+
+    <section class="checkout-box" style="margin-top: 20px;">
+      <h2>Changer le statut</h2>
+
+      <form action="/admin/team-orders/<%= teamOrder.id %>/status" method="POST" class="checkout-form">
+        <select name="status" required>
+          <option value="ouverte" <%= teamOrder.status === 'ouverte' ? 'selected' : '' %>>ouverte</option>
+          <option value="payée" <%= teamOrder.status === 'payée' ? 'selected' : '' %>>payée</option>
+          <option value="en préparation" <%= teamOrder.status === 'en préparation' ? 'selected' : '' %>>en préparation</option>
+          <option value="en livraison" <%= teamOrder.status === 'en livraison' ? 'selected' : '' %>>en livraison</option>
+          <option value="livrée" <%= teamOrder.status === 'livrée' ? 'selected' : '' %>>livrée</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary">Mettre à jour le statut</button>
+      </form>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>
