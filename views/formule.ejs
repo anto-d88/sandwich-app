@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Menu complet</span>
+      <h1>Composez votre formule</h1>
+      <p>Choisissez 1 sandwich, 1 boisson et 1 dessert. La formule est toujours au moins 0,20 € moins chère que les produits pris séparément.</p>
+    </section>
+
+    <section class="checkout-box">
+      <form action="/formule/add" method="POST" class="checkout-form">
+        <label for="sandwich_id"><strong>Choisissez votre sandwich</strong></label>
+        <select name="sandwich_id" id="sandwich_id" required>
+          <option value="">-- Sélectionner un sandwich --</option>
+          <% sandwiches.forEach(product => { %>
+            <option value="<%= product.id %>" data-price="<%= Number(product.price) %>">
+              <%= product.name %> — <%= Number(product.price).toFixed(2).replace('.', ',') %> €
+            </option>
+          <% }) %>
+        </select>
+
+        <label for="boisson_id"><strong>Choisissez votre boisson</strong></label>
+        <select name="boisson_id" id="boisson_id" required>
+          <option value="">-- Sélectionner une boisson --</option>
+          <% boissons.forEach(product => { %>
+            <option value="<%= product.id %>" data-price="<%= Number(product.price) %>">
+              <%= product.name %> — <%= Number(product.price).toFixed(2).replace('.', ',') %> €
+            </option>
+          <% }) %>
+        </select>
+
+        <label for="dessert_id"><strong>Choisissez votre dessert</strong></label>
+        <select name="dessert_id" id="dessert_id" required>
+          <option value="">-- Sélectionner un dessert --</option>
+          <% desserts.forEach(product => { %>
+            <option value="<%= product.id %>" data-price="<%= Number(product.price) %>">
+              <%= product.name %> — <%= Number(product.price).toFixed(2).replace('.', ',') %> €
+            </option>
+          <% }) %>
+        </select>
+
+        <div class="checkout-box" style="margin-top: 12px;">
+          <p><strong>Total séparé :</strong> <span id="total-separe">0,00 €</span></p>
+          <p><strong>Prix formule :</strong> <span id="prix-formule">0,00 €</span></p>
+          <p style="color:#15803d; font-weight:700;"><strong>Économie :</strong> <span id="economie">0,20 €</span></p>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Ajouter la formule au panier</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const sandwichSelect = document.getElementById('sandwich_id');
+    const boissonSelect = document.getElementById('boisson_id');
+    const dessertSelect = document.getElementById('dessert_id');
+
+    const totalSepareEl = document.getElementById('total-separe');
+    const prixFormuleEl = document.getElementById('prix-formule');
+    const economieEl = document.getElementById('economie');
+
+    function getSelectedPrice(select) {
+      const option = select.options[select.selectedIndex];
+      return option && option.dataset.price ? Number(option.dataset.price) : 0;
+    }
+
+    function formatEuro(value) {
+      return value.toFixed(2).replace('.', ',') + ' €';
+    }
+
+    function updateFormulePrice() {
+      const total =
+        getSelectedPrice(sandwichSelect) +
+        getSelectedPrice(boissonSelect) +
+        getSelectedPrice(dessertSelect);
+
+      const formule = total > 0 ? Math.max(0, total - 0.20) : 0;
+      const economie = total > 0 ? (total - formule) : 0;
+
+      totalSepareEl.textContent = formatEuro(total);
+      prixFormuleEl.textContent = formatEuro(formule);
+      economieEl.textContent = formatEuro(economie);
+    }
+
+    sandwichSelect.addEventListener('change', updateFormulePrice);
+    boissonSelect.addEventListener('change', updateFormulePrice);
+    dessertSelect.addEventListener('change', updateFormulePrice);
+
+    updateFormulePrice();
+  </script>
+</body>
+</html>

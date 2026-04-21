@@ -13,6 +13,7 @@ const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 const webhookRoutes = require('./routes/webhook');
 const teamOrderRoutes = require('./routes/teamOrder');
+const formuleRoutes = require('./routes/formule');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +61,7 @@ app.use('/order', orderRoutes);
 app.use('/admin', adminRoutes);
 app.use('/auth', authRoutes);
 app.use('/team-order', teamOrderRoutes);
+app.use('/formule', formuleRoutes);
 
 // 404
 app.use((req, res) => {
