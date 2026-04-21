@@ -74,7 +74,7 @@ exports.addParticipantToTeamOrder = async (req, res) => {
 
     const products = await productService.getAllAvailableProducts();
 
-    if (mode === 'sandwich') {
+        if (mode === 'sandwich' || mode === 'boisson' || mode === 'dessert') {
       const productId = Number(req.body.product_id);
       const quantity = Number(req.body.quantity) || 1;
 
