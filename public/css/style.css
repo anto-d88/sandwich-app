@@ -678,3 +678,77 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+.formula-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 0.8fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.formula-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.formula-summary {
+  position: sticky;
+  top: 20px;
+}
+
+.formula-card {
+  display: block;
+  cursor: pointer;
+}
+
+.formula-card input[type="radio"] {
+  display: none;
+}
+
+.formula-card__body {
+  background: white;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.formula-card input[type="radio"]:checked + .formula-card__body {
+  border-color: #f97316;
+  transform: translateY(-2px);
+}
+
+.formula-card__image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  background: #e5e7eb;
+}
+
+.formula-card__content {
+  padding: 16px;
+}
+
+.formula-card__content h3 {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.formula-card__content p {
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 1000px) {
+  .formula-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-summary {
+    position: static;
+  }
+}

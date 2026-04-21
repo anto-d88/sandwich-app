@@ -18,10 +18,10 @@
     <section class="menu-top-banner">
       <div>
         <strong>Menu complet</strong>
-        <p>Sandwich + Boisson + Dessert</p>
+        <p>Choisissez votre sandwich, votre boisson et votre dessert</p>
       </div>
       <div>
-        <strong>8,90€</strong>
+        <a href="/formule" class="btn btn-primary">Composer mon menu</a>
       </div>
     </section>
 
@@ -47,7 +47,7 @@
             <p class="product-description"><%= product.description || '' %></p>
 
             <% if (product.stock_quantity <= 0) { %>
-              <span class="product-badge">Rupture</span>
+              <span class="product-badge product-badge--danger">Rupture</span>
               <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
             <% } else if (product.stock_quantity <= 3) { %>
               <span class="product-badge">🔥 Très demandé</span>
@@ -87,7 +87,7 @@
 
     <section class="page-intro" style="margin-top: 34px;">
       <h2>🥤 Boissons</h2>
-      <p>Des boissons simples à ajouter à votre sandwich.</p>
+      <p>Des boissons simples à ajouter à votre commande.</p>
     </section>
 
     <section class="products-grid products-grid--small">

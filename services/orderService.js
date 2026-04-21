@@ -29,31 +29,53 @@ async function getOrderByStripeSessionId(stripeSessionId) {
 
 async function decrementStockFromCart(cart) {
   for (const item of cart) {
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('id, name, stock_quantity')
-      .eq('id', item.id)
-      .single();
 
-    if (productError) {
-      throw productError;
+    // 👉 CAS 1 : PRODUIT CLASSIQUE
+    if (!item.is_formula) {
+      const { data: product, error } = await supabase
+        .from('products')
+        .select('id, name, stock_quantity')
+        .eq('id', item.id)
+        .single();
+
+      if (error) throw error;
+
+      const newStock = Number(product.stock_quantity) - Number(item.quantity);
+
+      if (newStock < 0) {
+        throw new Error(`Stock insuffisant pour ${product.name}`);
+      }
+
+      await supabase
+        .from('products')
+        .update({ stock_quantity: newStock })
+        .eq('id', item.id);
     }
 
-    const currentStock = Number(product.stock_quantity || 0);
-    const orderedQty = Number(item.quantity || 0);
-    const newStock = currentStock - orderedQty;
+    // 👉 CAS 2 : FORMULE
+    if (item.is_formula && item.formula_items) {
 
-    if (newStock < 0) {
-      throw new Error(`Stock insuffisant pour ${product.name}`);
-    }
+      for (const subItem of item.formula_items) {
 
-    const { error: updateError } = await supabase
-      .from('products')
-      .update({ stock_quantity: newStock })
-      .eq('id', item.id);
+        const { data: product, error } = await supabase
+          .from('products')
+          .select('id, name, stock_quantity')
+          .eq('id', subItem.id)
+          .single();
 
-    if (updateError) {
-      throw updateError;
+        if (error) throw error;
+
+        const newStock = Number(product.stock_quantity) - Number(item.quantity);
+
+        if (newStock < 0) {
+          throw new Error(`Stock insuffisant pour ${product.name}`);
+        }
+
+        await supabase
+          .from('products')
+          .update({ stock_quantity: newStock })
+          .eq('id', subItem.id);
+      }
     }
   }
 }
