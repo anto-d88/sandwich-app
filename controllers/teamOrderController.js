@@ -48,11 +48,17 @@ exports.getJoinPage = async (req, res) => {
     const products = await productService.getAllAvailableProducts();
     const items = await teamOrderService.getTeamOrderItems(teamOrderId);
 
+    const sandwiches = products.filter(p => p.category === 'sandwich');
+    const boissons = products.filter(p => p.category === 'boisson');
+    const desserts = products.filter(p => p.category === 'dessert');
+
     res.render('team-order-join', {
       title: `Commande équipe ${teamOrder.team_name}`,
       teamOrder,
-      products,
-      items
+      items,
+      sandwiches,
+      boissons,
+      desserts
     });
   } catch (error) {
     console.error('Erreur getJoinPage:', error);
@@ -63,24 +69,64 @@ exports.getJoinPage = async (req, res) => {
 exports.addParticipantToTeamOrder = async (req, res) => {
   try {
     const teamOrderId = Number(req.params.id);
-    const productId = Number(req.body.product_id);
-    const quantity = Number(req.body.quantity) || 1;
     const participantName = req.body.participant_name;
+    const mode = req.body.mode;
 
-    const product = await productService.getProductById(productId);
+    const products = await productService.getAllAvailableProducts();
 
-    if (!product) {
+    if (mode === 'sandwich') {
+      const productId = Number(req.body.product_id);
+      const quantity = Number(req.body.quantity) || 1;
+
+      const product = products.find(p => p.id === productId);
+
+      if (!product) {
+        return res.redirect(`/team-order/${teamOrderId}`);
+      }
+
+      await teamOrderService.addParticipantItem({
+        team_order_id: teamOrderId,
+        participant_name: participantName,
+        product_id: product.id,
+        product_name: product.name,
+        unit_price: Number(product.price),
+        quantity
+      });
+
       return res.redirect(`/team-order/${teamOrderId}`);
     }
 
-    await teamOrderService.addParticipantItem({
-      team_order_id: teamOrderId,
-      participant_name: participantName,
-      product_id: product.id,
-      product_name: product.name,
-      unit_price: Number(product.price),
-      quantity
-    });
+    if (mode === 'formule') {
+      const sandwichId = Number(req.body.sandwich_id);
+      const boissonId = Number(req.body.boisson_id);
+      const dessertId = Number(req.body.dessert_id);
+
+      const sandwich = products.find(p => p.id === sandwichId);
+      const boisson = products.find(p => p.id === boissonId);
+      const dessert = products.find(p => p.id === dessertId);
+
+      if (!sandwich || !boisson || !dessert) {
+        return res.status(400).send('Formule incomplète');
+      }
+
+      const totalSepare =
+        Number(sandwich.price) +
+        Number(boisson.price) +
+        Number(dessert.price);
+
+      const prixFormule = Number((totalSepare - 0.20).toFixed(2));
+
+      await teamOrderService.addParticipantItem({
+        team_order_id: teamOrderId,
+        participant_name: participantName,
+        product_id: sandwich.id,
+        product_name: `Formule : ${sandwich.name} + ${boisson.name} + ${dessert.name}`,
+        unit_price: prixFormule,
+        quantity: 1
+      });
+
+      return res.redirect(`/team-order/${teamOrderId}`);
+    }
 
     return res.redirect(`/team-order/${teamOrderId}`);
   } catch (error) {
