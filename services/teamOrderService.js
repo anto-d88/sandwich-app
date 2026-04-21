@@ -89,35 +89,55 @@ async function countTeamOrdersBySlot(deliverySlot) {
   return count || 0;
 }
 
+async function decrementSingleProductStock(productId, quantity) {
+  const { data: product, error: productError } = await supabase
+    .from('products')
+    .select('id, name, stock_quantity')
+    .eq('id', productId)
+    .single();
+
+  if (productError) {
+    throw productError;
+  }
+
+  const currentStock = Number(product.stock_quantity || 0);
+  const orderedQty = Number(quantity || 0);
+  const newStock = currentStock - orderedQty;
+
+  if (newStock < 0) {
+    throw new Error(`Stock insuffisant pour ${product.name}`);
+  }
+
+  const { error: updateError } = await supabase
+    .from('products')
+    .update({ stock_quantity: newStock })
+    .eq('id', productId);
+
+  if (updateError) {
+    throw updateError;
+  }
+}
+
 async function decrementStockFromTeamOrder(teamOrderId) {
   const items = await getTeamOrderItems(teamOrderId);
 
   for (const item of items) {
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('id, name, stock_quantity')
-      .eq('id', item.product_id)
-      .single();
+    // Produit simple : sandwich seul, boisson seule, dessert seul
+    if (item.item_type !== 'formule') {
+      if (!item.product_id) {
+        continue;
+      }
 
-    if (productError) {
-      throw productError;
+      await decrementSingleProductStock(item.product_id, item.quantity);
     }
 
-    const currentStock = Number(product.stock_quantity || 0);
-    const orderedQty = Number(item.quantity || 0);
-    const newStock = currentStock - orderedQty;
+    // Formule : sandwich + boisson + dessert
+    if (item.item_type === 'formule') {
+      const productIds = [item.product_id, item.boisson_id, item.dessert_id].filter(Boolean);
 
-    if (newStock < 0) {
-      throw new Error(`Stock insuffisant pour ${product.name}`);
-    }
-
-    const { error: updateError } = await supabase
-      .from('products')
-      .update({ stock_quantity: newStock })
-      .eq('id', item.product_id);
-
-    if (updateError) {
-      throw updateError;
+      for (const productId of productIds) {
+        await decrementSingleProductStock(productId, item.quantity);
+      }
     }
   }
 }

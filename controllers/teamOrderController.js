@@ -74,7 +74,8 @@ exports.addParticipantToTeamOrder = async (req, res) => {
 
     const products = await productService.getAllAvailableProducts();
 
-        if (mode === 'sandwich' || mode === 'boisson' || mode === 'dessert') {
+    // Produit seul : sandwich, boisson, dessert
+    if (mode === 'sandwich' || mode === 'boisson' || mode === 'dessert') {
       const productId = Number(req.body.product_id);
       const quantity = Number(req.body.quantity) || 1;
 
@@ -88,6 +89,7 @@ exports.addParticipantToTeamOrder = async (req, res) => {
         team_order_id: teamOrderId,
         participant_name: participantName,
         product_id: product.id,
+        item_type: 'single',
         product_name: product.name,
         unit_price: Number(product.price),
         quantity
@@ -96,6 +98,7 @@ exports.addParticipantToTeamOrder = async (req, res) => {
       return res.redirect(`/team-order/${teamOrderId}`);
     }
 
+    // Formule complète
     if (mode === 'formule') {
       const sandwichId = Number(req.body.sandwich_id);
       const boissonId = Number(req.body.boisson_id);
@@ -120,6 +123,9 @@ exports.addParticipantToTeamOrder = async (req, res) => {
         team_order_id: teamOrderId,
         participant_name: participantName,
         product_id: sandwich.id,
+        boisson_id: boisson.id,
+        dessert_id: dessert.id,
+        item_type: 'formule',
         product_name: `Formule : ${sandwich.name} + ${boisson.name} + ${dessert.name}`,
         unit_price: prixFormule,
         quantity: 1
@@ -198,6 +204,7 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
 
     const teamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
 
+    // Important : éviter de décrémenter le stock plusieurs fois si la page est rechargée
     if (teamOrder.status !== 'payée') {
       await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
       await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
