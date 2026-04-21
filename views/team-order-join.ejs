@@ -20,7 +20,7 @@
     <section class="menu-top-banner">
       <div>
         <strong>Choisissez votre mode</strong>
-        <p>Sandwich seul ou formule complète</p>
+        <p>Sandwich seul, boisson, dessert ou formule complète</p>
       </div>
     </section>
 
@@ -63,54 +63,54 @@
     </div>
 
     <section class="page-intro" style="margin-top: 34px;">
-  <h2>🥤 Ajouter une boisson seule</h2>
-</section>
+      <h2>🥤 Ajouter une boisson seule</h2>
+    </section>
 
-<div class="products-grid products-grid--small">
-  <% boissons.forEach(product => { %>
-    <article class="product-card">
-      <div class="product-card__content">
-        <span class="product-category">boisson</span>
-        <h2><%= product.name %></h2>
-        <p class="product-description"><%= product.description || 'Boisson fraîche' %></p>
-        <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
+    <div class="products-grid products-grid--small">
+      <% boissons.forEach(product => { %>
+        <article class="product-card">
+          <div class="product-card__content">
+            <span class="product-category">boisson</span>
+            <h2><%= product.name %></h2>
+            <p class="product-description"><%= product.description || 'Boisson fraîche' %></p>
+            <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
-        <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
-          <input type="hidden" name="mode" value="boisson">
-          <input type="hidden" name="participant_name" class="participant-name-hidden">
-          <input type="hidden" name="product_id" value="<%= product.id %>">
-          <input type="number" name="quantity" value="1" min="1" class="qty-input">
-          <button type="submit" class="btn btn-primary">Ajouter à l’équipe</button>
-        </form>
-      </div>
-    </article>
-  <% }) %>
-</div>
+            <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+              <input type="hidden" name="mode" value="boisson">
+              <input type="hidden" name="participant_name" class="participant-name-hidden">
+              <input type="hidden" name="product_id" value="<%= product.id %>">
+              <input type="number" name="quantity" value="1" min="1" class="qty-input">
+              <button type="submit" class="btn btn-primary">Ajouter à l’équipe</button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
+    </div>
 
-<section class="page-intro" style="margin-top: 34px;">
-  <h2>🍰 Ajouter un dessert seul</h2>
-</section>
+    <section class="page-intro" style="margin-top: 34px;">
+      <h2>🍰 Ajouter un dessert seul</h2>
+    </section>
 
-<div class="products-grid products-grid--small">
-  <% desserts.forEach(product => { %>
-    <article class="product-card">
-      <div class="product-card__content">
-        <span class="product-category">dessert</span>
-        <h2><%= product.name %></h2>
-        <p class="product-description"><%= product.description || 'Dessert du jour' %></p>
-        <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
+    <div class="products-grid products-grid--small">
+      <% desserts.forEach(product => { %>
+        <article class="product-card">
+          <div class="product-card__content">
+            <span class="product-category">dessert</span>
+            <h2><%= product.name %></h2>
+            <p class="product-description"><%= product.description || 'Dessert du jour' %></p>
+            <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
-        <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
-          <input type="hidden" name="mode" value="dessert">
-          <input type="hidden" name="participant_name" class="participant-name-hidden">
-          <input type="hidden" name="product_id" value="<%= product.id %>">
-          <input type="number" name="quantity" value="1" min="1" class="qty-input">
-          <button type="submit" class="btn btn-primary">Ajouter à l’équipe</button>
-        </form>
-      </div>
-    </article>
-  <% }) %>
-</div>
+            <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+              <input type="hidden" name="mode" value="dessert">
+              <input type="hidden" name="participant_name" class="participant-name-hidden">
+              <input type="hidden" name="product_id" value="<%= product.id %>">
+              <input type="number" name="quantity" value="1" min="1" class="qty-input">
+              <button type="submit" class="btn btn-primary">Ajouter à l’équipe</button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
+    </div>
 
     <section class="page-intro" style="margin-top: 34px;">
       <h2>🍽 Composer une formule</h2>
@@ -251,7 +251,11 @@
 
     function getCheckedPrice(inputs) {
       const checked = Array.from(inputs).find(input => input.checked);
-      return checked ? Number(checked.dataset.price) : 0;
+      return checked ? Number(inputPrice(checked)) : 0;
+    }
+
+    function inputPrice(input) {
+      return input.dataset.price ? Number(input.dataset.price) : 0;
     }
 
     function formatEuro(value) {
