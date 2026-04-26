@@ -83,6 +83,16 @@
                   >
                 </label>
 
+                <% if ((product.name || '').toLowerCase().includes('jambon')) { %>
+                  <label>
+                    Base
+                    <select name="sauce_choice" required>
+                      <option value="beurre">Beurre</option>
+                      <option value="mayonnaise">Mayonnaise</option>
+                    </select>
+                  </label>
+                <% } %>
+
                 <label>
                   Crudités
                   <select name="crudites_choice">

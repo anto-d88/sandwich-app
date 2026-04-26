@@ -38,7 +38,40 @@ exports.addToCart = async (req, res) => {
     }
 
     const cart = req.session.cart || [];
-    const existingItem = cart.find(item => item.id === productId);
+
+    let finalPrice = Number(product.price);
+    let finalName = product.name;
+    const options = [];
+
+    if (product.category === 'sandwich') {
+      const isJambon = (product.name || '').toLowerCase().includes('jambon');
+      const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
+      const cruditesChoice = req.body.crudites_choice || 'avec crudités';
+      const extraCrudites = req.body.extra_crudites === 'on';
+      const extraCheese = req.body.extra_cheese === 'on';
+
+      if (sauceChoice) {
+        options.push(sauceChoice);
+      }
+
+      options.push(cruditesChoice);
+
+      if (extraCrudites) {
+        finalPrice += 0.50;
+        options.push('supplément crudités');
+      }
+
+      if (extraCheese) {
+        finalPrice += 0.50;
+        options.push('tranche de fromage');
+      }
+
+      finalName = `${product.name} (${options.join(', ')})`;
+    }
+
+    const existingItem = cart.find(item => {
+      return item.id === product.id && item.name === finalName && Number(item.price) === Number(finalPrice);
+    });
 
     if (existingItem) {
       const newQty = existingItem.quantity + quantity;
@@ -49,31 +82,12 @@ exports.addToCart = async (req, res) => {
 
       existingItem.quantity = newQty;
     } else {
-  const cruditesChoice = req.body.crudites_choice || 'avec crudités';
-const extraCrudites = req.body.extra_crudites === 'on';
-const extraCheese = req.body.extra_cheese === 'on';
-
-let finalPrice = Number(product.price);
-const options = [];
-
-options.push(cruditesChoice);
-
-if (extraCrudites) {
-  finalPrice += 0.50;
-  options.push('supplément crudités');
-}
-
-if (extraCheese) {
-  finalPrice += 0.50;
-  options.push('tranche de fromage');
-}
-
-cart.push({
-  id: product.id,
-  name: `${product.name} (${options.join(', ')})`,
-  price: finalPrice,
-  quantity
-});
+      cart.push({
+        id: product.id,
+        name: finalName,
+        price: finalPrice,
+        quantity
+      });
     }
 
     req.session.cart = cart;
@@ -86,9 +100,9 @@ cart.push({
 };
 
 exports.removeFromCart = (req, res) => {
-  const productId = Number(req.params.id);
+  const productId = req.params.id;
 
-  req.session.cart = (req.session.cart || []).filter(item => item.id !== productId);
+  req.session.cart = (req.session.cart || []).filter(item => String(item.id) !== String(productId));
 
   res.redirect('/cart');
 };
