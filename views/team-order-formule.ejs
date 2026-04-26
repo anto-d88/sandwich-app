@@ -8,15 +8,20 @@
 
   <main class="container">
     <section class="page-intro">
-      <span class="section-badge">Formule complète</span>
-      <h1>Composez votre formule</h1>
-      <p>1 sandwich + 1 boisson + 1 dessert pour <strong>7,50€</strong>. Vous économisez 1€.</p>
+      <span class="section-badge">Formule équipe</span>
+      <h1>Composer une formule</h1>
+      <p>Commande : <strong><%= teamOrder.team_name %></strong></p>
+      <p>1 sandwich + 1 boisson + 1 dessert pour <strong>7,50€</strong>.</p>
     </section>
 
-    <form action="/formule/add" method="POST" class="formula-layout">
+    <form action="/team-order/<%= teamOrder.id %>/formule/add" method="POST" class="formula-layout">
+      <section class="checkout-box">
+        <h2>Votre nom</h2>
+        <input type="text" name="participant_name" placeholder="Votre prénom / nom" required>
+      </section>
+
       <section class="formula-column">
         <h2>🥪 Sandwich</h2>
-
         <div class="products-grid products-grid--small">
           <% sandwiches.forEach(product => { %>
             <label class="formula-card">
@@ -26,7 +31,6 @@
                 <div class="formula-card__content">
                   <span class="product-category">sandwich</span>
                   <h3><%= product.name %></h3>
-                  <p><%= product.description || '' %></p>
                   <strong>4,50 €</strong>
                 </div>
               </div>
@@ -37,7 +41,6 @@
 
       <section class="formula-column">
         <h2>🥤 Boisson</h2>
-
         <div class="products-grid products-grid--small">
           <% boissons.forEach(product => { %>
             <label class="formula-card">
@@ -54,7 +57,6 @@
         </div>
 
         <h2 style="margin-top:24px;">🍰 Dessert</h2>
-
         <div class="products-grid products-grid--small">
           <% desserts.forEach(product => { %>
             <label class="formula-card">
@@ -73,12 +75,12 @@
 
       <aside class="formula-summary">
         <div class="checkout-box">
-          <h2>Votre formule</h2>
+          <h2>Résumé</h2>
           <p>Total séparé : <strong>8,50 €</strong></p>
           <p>Prix formule : <strong>7,50 €</strong></p>
           <p style="color:#15803d;font-weight:700;">Économie : 1,00 €</p>
 
-          <button type="submit" class="btn btn-primary">Ajouter la formule</button>
+          <button type="submit" class="btn btn-primary">Ajouter à l’équipe</button>
         </div>
       </aside>
     </form>

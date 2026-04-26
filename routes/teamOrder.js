@@ -8,6 +8,9 @@ router.post('/create', teamOrderController.createTeamOrder);
 router.get('/:id', teamOrderController.getJoinPage);
 router.post('/:id/add', teamOrderController.addParticipantToTeamOrder);
 
+router.get('/:id/formule', teamOrderController.getTeamFormulePage);
+router.post('/:id/formule/add', teamOrderController.addTeamFormule);
+
 router.get('/:id/summary', teamOrderController.getSummaryPage);
 router.post('/:id/checkout', teamOrderController.createTeamOrderCheckoutSession);
 router.get('/:id/payment-success', teamOrderController.handleTeamOrderPaymentSuccess);

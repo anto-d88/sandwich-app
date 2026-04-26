@@ -228,3 +228,57 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
     return res.status(500).send('Erreur confirmation paiement équipe');
   }
 };
+const FORMULE_PRICE = 7.50;
+
+exports.getTeamFormulePage = async (req, res) => {
+  try {
+    const teamOrderId = Number(req.params.id);
+    const teamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
+    const products = await productService.getAllAvailableProducts();
+
+    res.render('team-order-formule', {
+      title: 'Formule équipe',
+      teamOrder,
+      sandwiches: products.filter(p => p.category === 'sandwich'),
+      boissons: products.filter(p => p.category === 'boisson'),
+      desserts: products.filter(p => p.category === 'dessert'),
+      formulePrice: FORMULE_PRICE
+    });
+  } catch (error) {
+    console.error('Erreur getTeamFormulePage:', error);
+    res.status(500).send('Erreur chargement formule équipe');
+  }
+};
+
+exports.addTeamFormule = async (req, res) => {
+  try {
+    const teamOrderId = Number(req.params.id);
+    const products = await productService.getAllAvailableProducts();
+
+    const participantName = req.body.participant_name;
+    const sandwich = products.find(p => p.id === Number(req.body.sandwich_id));
+    const boisson = products.find(p => p.id === Number(req.body.boisson_id));
+    const dessert = products.find(p => p.id === Number(req.body.dessert_id));
+
+    if (!participantName || !sandwich || !boisson || !dessert) {
+      return res.status(400).send('Formule incomplète');
+    }
+
+    await teamOrderService.addParticipantItem({
+      team_order_id: teamOrderId,
+      participant_name: participantName,
+      product_id: sandwich.id,
+      boisson_id: boisson.id,
+      dessert_id: dessert.id,
+      item_type: 'formule',
+      product_name: `Formule : ${sandwich.name} + ${boisson.name} + ${dessert.name}`,
+      unit_price: FORMULE_PRICE,
+      quantity: 1
+    });
+
+    res.redirect(`/team-order/${teamOrderId}`);
+  } catch (error) {
+    console.error('Erreur addTeamFormule:', error);
+    res.status(500).send('Erreur ajout formule équipe');
+  }
+};

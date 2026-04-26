@@ -833,3 +833,13 @@ button {
     position: static;
   }
 }
+.option-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.option-check input {
+  width: auto;
+}

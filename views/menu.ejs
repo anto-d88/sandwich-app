@@ -11,23 +11,26 @@
       <span class="section-badge">Commande rapide</span>
       <h1>Notre carte</h1>
       <p>
-        Sandwichs, boissons et desserts pour une pause déjeuner simple, rapide et livrée sur créneau fixe.
+        Sandwichs froids, boissons et desserts pour une pause déjeuner simple,
+        rapide et livrée sur créneau fixe.
       </p>
     </section>
 
     <section class="menu-top-banner">
       <div>
-        <strong>Menu complet</strong>
-        <p>Choisissez votre sandwich, votre boisson et votre dessert</p>
+        <strong>Formule complète</strong>
+        <p>Sandwich + boisson + dessert à 7,50€ — vous économisez 1€</p>
       </div>
       <div>
-        <a href="/formule" class="btn btn-primary">Composer mon menu</a>
+        <a href="/formule" class="btn btn-primary">Composer ma formule</a>
       </div>
     </section>
 
     <section class="page-intro" style="margin-top: 10px;">
       <h2>🥪 Sandwichs</h2>
-      <p>Nos sandwichs baguette froids préparés pour les équipes.</p>
+      <p>
+        Crudités comprises : salade, tomate, carotte. Vous pouvez choisir avec ou sans crudités.
+      </p>
     </section>
 
     <section class="products-grid">
@@ -42,7 +45,7 @@
           </a>
 
           <div class="product-card__content">
-            <span class="product-category"><%= product.category || 'sandwich' %></span>
+            <span class="product-category">sandwich</span>
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || '' %></p>
 
@@ -60,12 +63,16 @@
 
             <div class="product-bottom">
               <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
+            </div>
 
-              <% if (product.stock_quantity <= 0) { %>
-                <button class="btn btn-danger" disabled>Rupture de stock</button>
-              <% } else { %>
-                <form action="/cart/add" method="POST" class="product-form-inline">
-                  <input type="hidden" name="id" value="<%= product.id %>">
+            <% if (product.stock_quantity <= 0) { %>
+              <button class="btn btn-danger" disabled>Rupture de stock</button>
+            <% } else { %>
+              <form action="/cart/add" method="POST" class="product-form">
+                <input type="hidden" name="id" value="<%= product.id %>">
+
+                <label>
+                  Quantité
                   <input
                     type="number"
                     name="quantity"
@@ -74,10 +81,29 @@
                     max="<%= product.stock_quantity %>"
                     class="qty-input"
                   >
-                  <button type="submit" class="btn btn-primary">Ajouter</button>
-                </form>
-              <% } %>
-            </div>
+                </label>
+
+                <label>
+                  Crudités
+                  <select name="crudites_choice">
+                    <option value="avec crudités">Avec crudités</option>
+                    <option value="sans crudités">Sans crudités</option>
+                  </select>
+                </label>
+
+                <label class="option-check">
+                  <input type="checkbox" name="extra_crudites">
+                  Supplément crudités +0,50€
+                </label>
+
+                <label class="option-check">
+                  <input type="checkbox" name="extra_cheese">
+                  Tranche de fromage +0,50€
+                </label>
+
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
+            <% } %>
 
             <a href="/product/<%= product.id %>" class="product-link">Voir le détail</a>
           </div>
@@ -94,7 +120,7 @@
       <% products.filter(product => product.category === 'boisson').forEach(product => { %>
         <article class="product-card">
           <div class="product-card__content">
-            <span class="product-category"><%= product.category || 'boisson' %></span>
+            <span class="product-category">boisson</span>
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || 'Boisson fraîche' %></p>
 
@@ -140,7 +166,7 @@
       <% products.filter(product => product.category === 'dessert').forEach(product => { %>
         <article class="product-card">
           <div class="product-card__content">
-            <span class="product-category"><%= product.category || 'dessert' %></span>
+            <span class="product-category">dessert</span>
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || 'Dessert du jour' %></p>
 

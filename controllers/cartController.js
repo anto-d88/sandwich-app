@@ -49,12 +49,31 @@ exports.addToCart = async (req, res) => {
 
       existingItem.quantity = newQty;
     } else {
-      cart.push({
-        id: product.id,
-        name: product.name,
-        price: Number(product.price),
-        quantity
-      });
+  const cruditesChoice = req.body.crudites_choice || 'avec crudités';
+const extraCrudites = req.body.extra_crudites === 'on';
+const extraCheese = req.body.extra_cheese === 'on';
+
+let finalPrice = Number(product.price);
+const options = [];
+
+options.push(cruditesChoice);
+
+if (extraCrudites) {
+  finalPrice += 0.50;
+  options.push('supplément crudités');
+}
+
+if (extraCheese) {
+  finalPrice += 0.50;
+  options.push('tranche de fromage');
+}
+
+cart.push({
+  id: product.id,
+  name: `${product.name} (${options.join(', ')})`,
+  price: finalPrice,
+  quantity
+});
     }
 
     req.session.cart = cart;
