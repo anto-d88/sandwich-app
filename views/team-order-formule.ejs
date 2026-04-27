@@ -11,7 +11,7 @@
       <span class="section-badge">Formule équipe</span>
       <h1>Composer une formule</h1>
       <p>Commande : <strong><%= teamOrder.team_name %></strong></p>
-      <p>1 sandwich + 1 boisson + 1 dessert pour <strong>7,50€</strong>.</p>
+      <p>1 sandwich + 1 boisson + 1 dessert pour <strong>7,50€</strong>. Vous économisez 1€.</p>
     </section>
 
     <form action="/team-order/<%= teamOrder.id %>/formule/add" method="POST" class="formula-layout">
@@ -27,10 +27,11 @@
             <label class="formula-card">
               <input type="radio" name="sandwich_id" value="<%= product.id %>" required>
               <div class="formula-card__body">
-                <img src="<%= product.image_url || '/images/default-product.jpg' %>" class="formula-card__image">
+                <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="formula-card__image">
                 <div class="formula-card__content">
                   <span class="product-category">sandwich</span>
                   <h3><%= product.name %></h3>
+                  <p><%= product.description || '' %></p>
                   <strong>4,50 €</strong>
                 </div>
               </div>
@@ -46,9 +47,11 @@
             <label class="formula-card">
               <input type="radio" name="boisson_id" value="<%= product.id %>" required>
               <div class="formula-card__body">
+                <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="formula-card__image">
                 <div class="formula-card__content">
                   <span class="product-category">boisson</span>
                   <h3><%= product.name %></h3>
+                  <p><%= product.description || 'Boisson fraîche' %></p>
                   <strong>1,50 €</strong>
                 </div>
               </div>
@@ -62,9 +65,11 @@
             <label class="formula-card">
               <input type="radio" name="dessert_id" value="<%= product.id %>" required>
               <div class="formula-card__body">
+                <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="formula-card__image">
                 <div class="formula-card__content">
                   <span class="product-category">dessert</span>
                   <h3><%= product.name %></h3>
+                  <p><%= product.description || 'Dessert du jour' %></p>
                   <strong>2,50 €</strong>
                 </div>
               </div>

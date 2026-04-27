@@ -53,11 +53,7 @@
       <% sandwiches.forEach(product => { %>
         <article class="product-card product-card--pro">
           <div class="product-image-wrap">
-            <img
-              src="<%= product.image_url || '/images/default-product.jpg' %>"
-              alt="<%= product.name %>"
-              class="product-image"
-            >
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
           </div>
 
           <div class="product-card__content">
@@ -65,43 +61,18 @@
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || '' %></p>
 
-            <% if (product.stock_quantity <= 0) { %>
-              <span class="product-badge product-badge--danger">Rupture</span>
-              <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-            <% } else if (product.stock_quantity <= 3) { %>
-              <span class="product-badge">🔥 Très demandé</span>
-              <p class="stock-warning stock-warning--danger">⚠️ Plus que quelques sandwichs disponibles</p>
-            <% } else if (product.stock_quantity <= 6) { %>
-              <p class="stock-warning">⏳ Stock limité aujourd’hui</p>
-            <% } else { %>
-              <p class="stock-ok">✔ Disponible</p>
-            <% } %>
+            <p class="stock-ok">✔ Disponible</p>
 
             <div class="product-bottom">
               <p class="product-price">4,50 €</p>
 
-              <% if (product.stock_quantity <= 0) { %>
-                <button class="btn btn-danger" disabled>Rupture</button>
-              <% } else { %>
-                <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
-                  <input type="hidden" name="mode" value="sandwich">
-                  <input type="hidden" name="participant_name" class="participant-name-hidden">
-                  <input type="hidden" name="product_id" value="<%= product.id %>">
-
-                  <input
-                    type="number"
-                    name="quantity"
-                    value="1"
-                    min="1"
-                    max="<%= product.stock_quantity %>"
-                    class="qty-input"
-                  >
-
-                  <button type="submit" class="btn btn-primary">
-                    Ajouter
-                  </button>
-                </form>
-              <% } %>
+              <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+                <input type="hidden" name="mode" value="sandwich">
+                <input type="hidden" name="participant_name" class="participant-name-hidden">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
             </div>
           </div>
         </article>
@@ -115,45 +86,28 @@
 
     <div class="products-grid products-grid--small">
       <% boissons.forEach(product => { %>
-        <article class="product-card">
+        <article class="product-card product-card--pro">
+          <div class="product-image-wrap">
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
+          </div>
+
           <div class="product-card__content">
             <span class="product-category">boisson</span>
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || 'Boisson fraîche' %></p>
 
-            <% if (product.stock_quantity <= 0) { %>
-              <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-            <% } else if (product.stock_quantity <= 3) { %>
-              <p class="stock-warning stock-warning--danger">⚠️ Stock faible</p>
-            <% } else { %>
-              <p class="stock-ok">✔ Disponible</p>
-            <% } %>
+            <p class="stock-ok">✔ Disponible</p>
 
             <div class="product-bottom">
               <p class="product-price">1,50 €</p>
 
-              <% if (product.stock_quantity <= 0) { %>
-                <button class="btn btn-danger" disabled>Rupture</button>
-              <% } else { %>
-                <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
-                  <input type="hidden" name="mode" value="boisson">
-                  <input type="hidden" name="participant_name" class="participant-name-hidden">
-                  <input type="hidden" name="product_id" value="<%= product.id %>">
-
-                  <input
-                    type="number"
-                    name="quantity"
-                    value="1"
-                    min="1"
-                    max="<%= product.stock_quantity %>"
-                    class="qty-input"
-                  >
-
-                  <button type="submit" class="btn btn-primary">
-                    Ajouter
-                  </button>
-                </form>
-              <% } %>
+              <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+                <input type="hidden" name="mode" value="boisson">
+                <input type="hidden" name="participant_name" class="participant-name-hidden">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
             </div>
           </div>
         </article>
@@ -167,45 +121,28 @@
 
     <div class="products-grid products-grid--small">
       <% desserts.forEach(product => { %>
-        <article class="product-card">
+        <article class="product-card product-card--pro">
+          <div class="product-image-wrap">
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
+          </div>
+
           <div class="product-card__content">
             <span class="product-category">dessert</span>
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || 'Dessert du jour' %></p>
 
-            <% if (product.stock_quantity <= 0) { %>
-              <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-            <% } else if (product.stock_quantity <= 3) { %>
-              <p class="stock-warning stock-warning--danger">⚠️ Stock faible</p>
-            <% } else { %>
-              <p class="stock-ok">✔ Disponible</p>
-            <% } %>
+            <p class="stock-ok">✔ Disponible</p>
 
             <div class="product-bottom">
               <p class="product-price">2,50 €</p>
 
-              <% if (product.stock_quantity <= 0) { %>
-                <button class="btn btn-danger" disabled>Rupture</button>
-              <% } else { %>
-                <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
-                  <input type="hidden" name="mode" value="dessert">
-                  <input type="hidden" name="participant_name" class="participant-name-hidden">
-                  <input type="hidden" name="product_id" value="<%= product.id %>">
-
-                  <input
-                    type="number"
-                    name="quantity"
-                    value="1"
-                    min="1"
-                    max="<%= product.stock_quantity %>"
-                    class="qty-input"
-                  >
-
-                  <button type="submit" class="btn btn-primary">
-                    Ajouter
-                  </button>
-                </form>
-              <% } %>
+              <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+                <input type="hidden" name="mode" value="dessert">
+                <input type="hidden" name="participant_name" class="participant-name-hidden">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
             </div>
           </div>
         </article>
@@ -255,7 +192,6 @@
 
     function syncParticipantName() {
       const value = participantInput.value.trim();
-
       hiddenParticipantInputs.forEach(input => {
         input.value = value;
       });
