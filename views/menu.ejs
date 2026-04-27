@@ -128,7 +128,15 @@
 
     <section class="products-grid products-grid--small">
       <% products.filter(product => product.category === 'boisson').forEach(product => { %>
-        <article class="product-card">
+        <article class="product-card product-card--pro">
+          <div class="product-image-wrap">
+            <img
+              src="<%= product.image_url || '/images/default-product.jpg' %>"
+              alt="<%= product.name %>"
+              class="product-image"
+            >
+          </div>
+
           <div class="product-card__content">
             <span class="product-category">boisson</span>
             <h2><%= product.name %></h2>
@@ -174,7 +182,15 @@
 
     <section class="products-grid products-grid--small">
       <% products.filter(product => product.category === 'dessert').forEach(product => { %>
-        <article class="product-card">
+        <article class="product-card product-card--pro">
+          <div class="product-image-wrap">
+            <img
+              src="<%= product.image_url || '/images/default-product.jpg' %>"
+              alt="<%= product.name %>"
+              class="product-image"
+            >
+          </div>
+
           <div class="product-card__content">
             <span class="product-category">dessert</span>
             <h2><%= product.name %></h2>
