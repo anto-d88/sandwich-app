@@ -46,19 +46,34 @@ exports.addToCart = async (req, res) => {
     if (product.category === 'sandwich') {
       const isJambon = (product.name || '').toLowerCase().includes('jambon');
       const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
-      const cruditesChoice = req.body.crudites_choice || 'avec crudités';
-      const extraCrudites = req.body.extra_crudites === 'on';
+      const cruditesChoice = req.body.crudites_choice || 'avec';
+      const rawCrudites = req.body.crudites;
       const extraCheese = req.body.extra_cheese === 'on';
+
+      let cruditesList = [];
+
+      if (Array.isArray(rawCrudites)) {
+        cruditesList = rawCrudites;
+      } else if (typeof rawCrudites === 'string') {
+        cruditesList = [rawCrudites];
+      }
 
       if (sauceChoice) {
         options.push(sauceChoice);
       }
 
-      options.push(cruditesChoice);
+      if (cruditesChoice === 'sans') {
+        options.push('sans crudités');
+      } else {
+        options.push('avec crudités');
 
-      if (extraCrudites) {
-        finalPrice += 0.50;
-        options.push('supplément crudités');
+        if (cruditesList.length > 0) {
+          options.push(`suppléments: ${cruditesList.join(', ')}`);
+        }
+
+        if (cruditesList.includes('oeuf')) {
+          finalPrice += 0.50;
+        }
       }
 
       if (extraCheese) {
@@ -70,7 +85,11 @@ exports.addToCart = async (req, res) => {
     }
 
     const existingItem = cart.find(item => {
-      return item.id === product.id && item.name === finalName && Number(item.price) === Number(finalPrice);
+      return (
+        String(item.id) === String(product.id) &&
+        item.name === finalName &&
+        Number(item.price) === Number(finalPrice)
+      );
     });
 
     if (existingItem) {
@@ -102,7 +121,9 @@ exports.addToCart = async (req, res) => {
 exports.removeFromCart = (req, res) => {
   const productId = req.params.id;
 
-  req.session.cart = (req.session.cart || []).filter(item => String(item.id) !== String(productId));
+  req.session.cart = (req.session.cart || []).filter(item => {
+    return String(item.id) !== String(productId);
+  });
 
   res.redirect('/cart');
 };

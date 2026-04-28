@@ -95,16 +95,35 @@
 
                 <label>
                   Crudités
-                  <select name="crudites_choice">
-                    <option value="avec crudités">Avec crudités</option>
-                    <option value="sans crudités">Sans crudités</option>
+                  <select name="crudites_choice" class="crudites-select">
+                    <option value="avec">Avec crudités</option>
+                    <option value="sans">Sans crudités</option>
                   </select>
                 </label>
 
-                <label class="option-check">
-                  <input type="checkbox" name="extra_crudites">
-                  Supplément crudités +0,50€
-                </label>
+                <div class="crudites-options">
+                  <p style="margin: 6px 0; font-weight: 700;">Suppléments crudités :</p>
+
+                  <label class="option-check">
+                    <input type="checkbox" name="crudites" value="salade">
+                    Salade
+                  </label>
+
+                  <label class="option-check">
+                    <input type="checkbox" name="crudites" value="tomate">
+                    Tomate
+                  </label>
+
+                  <label class="option-check">
+                    <input type="checkbox" name="crudites" value="carotte">
+                    Carotte
+                  </label>
+
+                  <label class="option-check">
+                    <input type="checkbox" name="crudites" value="oeuf">
+                    Œuf +0,50€
+                  </label>
+                </div>
 
                 <label class="option-check">
                   <input type="checkbox" name="extra_cheese">
@@ -229,6 +248,35 @@
       <% }) %>
     </section>
   </main>
+
+  <script>
+    document.querySelectorAll('.product-form').forEach(form => {
+      const select = form.querySelector('.crudites-select');
+      const options = form.querySelector('.crudites-options');
+
+      if (!select || !options) return;
+
+      function updateCrudites() {
+        const inputs = options.querySelectorAll('input');
+
+        if (select.value === 'sans') {
+          options.style.opacity = '0.45';
+          inputs.forEach(input => {
+            input.checked = false;
+            input.disabled = true;
+          });
+        } else {
+          options.style.opacity = '1';
+          inputs.forEach(input => {
+            input.disabled = false;
+          });
+        }
+      }
+
+      select.addEventListener('change', updateCrudites);
+      updateCrudites();
+    });
+  </script>
 
   <%- include('partials/footer') %>
 </body>

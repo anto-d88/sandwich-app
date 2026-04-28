@@ -843,3 +843,23 @@ button {
 .option-check input {
   width: auto;
 }
+
+.crudites-options {
+  display: grid;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.option-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.option-check input {
+  width: auto;
+}
