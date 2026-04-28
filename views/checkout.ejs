@@ -11,7 +11,19 @@
       <span class="section-badge">Paiement</span>
       <h1>Finaliser la commande</h1>
       <p>Renseignez vos informations pour lancer le paiement sécurisé.</p>
+      <p>
+        Créneaux disponibles : <strong>11h, 13h et 15h</strong>.
+        Les commandes ferment <strong>50 minutes avant chaque livraison</strong>.
+      </p>
     </section>
+
+    <% if (error) { %>
+      <section class="team-error-box">
+        <h2>Créneau indisponible</h2>
+        <p><%= error %></p>
+        <p>Choisissez un autre créneau disponible ci-dessous.</p>
+      </section>
+    <% } %>
 
     <div class="checkout-layout">
       <section class="checkout-box">
@@ -27,7 +39,10 @@
         <% }) %>
 
         <hr>
-        <p class="checkout-total"><strong>Total : <%= total.toFixed(2).replace('.', ',') %> €</strong></p>
+
+        <p class="checkout-total">
+          <strong>Total : <%= total.toFixed(2).replace('.', ',') %> €</strong>
+        </p>
 
         <p style="color:#16a34a; font-weight:700; margin-top:16px;">
           ✔ Livraison incluse • Votre commande sera livrée sur le créneau choisi
@@ -38,24 +53,109 @@
         <h2>Informations de livraison</h2>
 
         <form action="/order/create-checkout-session" method="POST" class="checkout-form">
-          <input type="text" name="customer_name" placeholder="Nom complet" required>
-          <input type="text" name="customer_phone" placeholder="Téléphone" required>
-          <input type="email" name="customer_email" placeholder="Email" required>
-          <input type="text" name="company_name" placeholder="Nom du call center / entreprise">
-          <input type="text" name="delivery_address" placeholder="Adresse de livraison" required>
+          <input
+            type="text"
+            name="customer_name"
+            placeholder="Nom complet"
+            value="<%= old.customer_name || '' %>"
+            required
+          >
 
-          <select name="delivery_slot" required>
-            <option value="">Choisir un créneau</option>
-            <option value="11:30">11:30</option>
-            <option value="12:00">12:00</option>
-            <option value="12:30">12:30</option>
-            <option value="13:00">13:00</option>
-          </select>
+          <input
+            type="text"
+            name="customer_phone"
+            placeholder="Téléphone"
+            value="<%= old.customer_phone || '' %>"
+            required
+          >
+
+          <input
+            type="email"
+            name="customer_email"
+            placeholder="Email"
+            value="<%= old.customer_email || '' %>"
+            required
+          >
+
+          <input
+            type="text"
+            name="company_name"
+            placeholder="Nom du call center / entreprise"
+            value="<%= old.company_name || '' %>"
+          >
+
+          <input
+            type="text"
+            name="delivery_address"
+            placeholder="Adresse de livraison"
+            value="<%= old.delivery_address || '' %>"
+            required
+          >
+
+          <label>
+            Créneau de livraison
+            <select name="delivery_slot" required>
+              <option value="">Choisir un créneau</option>
+
+              <% slots.forEach(slot => { %>
+                <option
+                  value="<%= slot.time %>"
+                  <%= old.delivery_slot === slot.time ? 'selected' : '' %>
+                  <%= slot.isUnavailable ? 'disabled' : '' %>
+                >
+                  <%= slot.time.replace(':00', 'h') %>
+                  <% if (slot.isFull) { %>
+                    — Complet
+                  <% } else if (slot.isClosed) { %>
+                    — Commandes clôturées
+                  <% } else { %>
+                    — Disponible (<%= slot.max - slot.count %> place(s))
+                  <% } %>
+                </option>
+              <% }) %>
+            </select>
+          </label>
 
           <button type="submit" class="btn btn-primary">Payer maintenant</button>
         </form>
       </section>
     </div>
+
+    <section class="checkout-box" style="margin-top: 24px;">
+      <h2>Disponibilité des créneaux</h2>
+
+      <div class="slot-list">
+        <% slots.forEach(slot => { %>
+          <div class="slot-item <%= slot.isUnavailable ? 'slot-item--full' : '' %>">
+            <div>
+              <strong><%= slot.time.replace(':00', 'h') %></strong>
+
+              <p>
+                <% if (slot.isFull) { %>
+                  Complet
+                <% } else if (slot.isClosed) { %>
+                  Commandes clôturées
+                <% } else { %>
+                  <%= slot.max - slot.count %> place(s) disponible(s)
+                <% } %>
+              </p>
+            </div>
+
+            <% if (slot.isFull) { %>
+              <span class="status-badge status-nouvelle">Complet</span>
+            <% } else if (slot.isClosed) { %>
+              <span class="status-badge status-en-preparation">Clôturé</span>
+            <% } else { %>
+              <span class="status-badge status-payee">Disponible</span>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+
+      <p style="margin-top:16px; color:#6b7280;">
+        Exemple : pour une livraison à 11h, les commandes ferment à 10h10.
+      </p>
+    </section>
   </main>
 
   <%- include('partials/footer') %>

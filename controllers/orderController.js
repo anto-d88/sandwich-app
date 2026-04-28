@@ -2,6 +2,68 @@ const getCartTotal = require('../utils/getCartTotal');
 const orderService = require('../services/orderService');
 const stripeService = require('../services/stripeService');
 
+const MAX_ORDERS_PER_SLOT = 10;
+const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+
+function isSlotClosed(slotTime) {
+  const now = new Date();
+
+  const [hours, minutes] = slotTime.split(':').map(Number);
+
+  const slotDate = new Date();
+  slotDate.setHours(hours, minutes, 0, 0);
+
+  const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
+
+  return now >= cutoffDate;
+}
+
+async function getSlotsWithAvailability() {
+  const slotsWithAvailability = [];
+
+  for (const slot of DELIVERY_SLOTS) {
+    const count = await orderService.countOrdersBySlot(slot);
+    const isFull = count >= MAX_ORDERS_PER_SLOT;
+    const isClosed = isSlotClosed(slot);
+
+    slotsWithAvailability.push({
+      time: slot,
+      count,
+      max: MAX_ORDERS_PER_SLOT,
+      isFull,
+      isClosed,
+      isUnavailable: isFull || isClosed
+    });
+  }
+
+  return slotsWithAvailability;
+}
+
+exports.getCheckoutPage = async (req, res) => {
+  try {
+    const cart = req.session.cart || [];
+
+    if (!cart.length) {
+      return res.redirect('/cart');
+    }
+
+    const total = getCartTotal(cart);
+    const slots = await getSlotsWithAvailability();
+
+    res.render('checkout', {
+      title: 'Finaliser la commande',
+      cart,
+      total,
+      slots,
+      error: null,
+      old: {}
+    });
+  } catch (error) {
+    console.error('Erreur getCheckoutPage:', error);
+    res.status(500).send('Erreur chargement paiement');
+  }
+};
+
 exports.createCheckoutSession = async (req, res) => {
   try {
     const cart = req.session.cart || [];
@@ -19,11 +81,41 @@ exports.createCheckoutSession = async (req, res) => {
       delivery_slot
     } = req.body;
 
-    const slotCount = await orderService.countOrdersBySlot(delivery_slot);
-    const MAX_ORDERS_PER_SLOT = 10;
+    const slots = await getSlotsWithAvailability();
+    const selectedSlot = slots.find(slot => slot.time === delivery_slot);
+    const total = getCartTotal(cart);
 
-    if (slotCount >= MAX_ORDERS_PER_SLOT) {
-      return res.status(400).send('Ce créneau est complet. Merci de choisir un autre horaire.');
+    if (!selectedSlot) {
+      return res.status(400).render('checkout', {
+        title: 'Finaliser la commande',
+        cart,
+        total,
+        slots,
+        error: 'Créneau invalide. Merci de choisir un créneau disponible.',
+        old: req.body
+      });
+    }
+
+    if (selectedSlot.isClosed) {
+      return res.status(400).render('checkout', {
+        title: 'Finaliser la commande',
+        cart,
+        total,
+        slots,
+        error: `Les commandes pour ${delivery_slot.replace(':00', 'h')} sont clôturées 50 minutes avant la livraison. Merci de choisir un autre créneau.`,
+        old: req.body
+      });
+    }
+
+    if (selectedSlot.isFull) {
+      return res.status(400).render('checkout', {
+        title: 'Finaliser la commande',
+        cart,
+        total,
+        slots,
+        error: `Le créneau ${delivery_slot.replace(':00', 'h')} est complet. Merci de choisir une autre heure.`,
+        old: req.body
+      });
     }
 
     const customer = {
@@ -49,10 +141,9 @@ exports.createCheckoutSession = async (req, res) => {
   }
 };
 
-exports.handleSuccess = async (req, res) => {
+exports.handlePaymentSuccess = async (req, res) => {
   try {
     const sessionId = req.query.session_id;
-    const cart = req.session.cart || [];
 
     if (!sessionId) {
       return res.status(400).send('Session Stripe manquante');
@@ -64,11 +155,7 @@ exports.handleSuccess = async (req, res) => {
       return res.status(400).send('Paiement non confirmé');
     }
 
-    if (!cart.length) {
-      return res.redirect('/menu');
-    }
-
-     const existingOrder = await orderService.getOrderByStripeSessionId(stripeSession.id);
+    const existingOrder = await orderService.getOrderByStripeSessionId(sessionId);
 
     if (existingOrder) {
       req.session.cart = [];
@@ -80,40 +167,37 @@ exports.handleSuccess = async (req, res) => {
       });
     }
 
-    const total = getCartTotal(cart);
+    const cart = req.session.cart || [];
+    const pendingOrder = req.session.pendingOrder;
 
-    const pendingOrder = req.session.pendingOrder || {};
+    if (!cart.length || !pendingOrder) {
+      return res.redirect('/menu');
+    }
 
-    const orderPayload = {
-      customer_name: pendingOrder.customer_name || stripeSession.metadata.customer_name,
-      customer_phone: pendingOrder.customer_phone || stripeSession.metadata.customer_phone,
-      customer_email: pendingOrder.customer_email || stripeSession.metadata.customer_email,
-      company_name: pendingOrder.company_name || stripeSession.metadata.company_name,
-      delivery_address: pendingOrder.delivery_address || stripeSession.metadata.delivery_address,
-      delivery_slot: pendingOrder.delivery_slot || stripeSession.metadata.delivery_slot,
-      total_amount: total,
-      status: 'nouvelle',
-      stripe_session_id: stripeSession.id
-    };
+    const order = await orderService.createOrderWithItems(
+      {
+        ...pendingOrder,
+        status: 'nouvelle',
+        stripe_session_id: sessionId
+      },
+      cart
+    );
 
-    const order = await orderService.createOrderWithItems(orderPayload, cart);
-
-    
     req.session.cart = [];
     req.session.pendingOrder = null;
 
-    return res.render('confirmation', {
+    res.render('confirmation', {
       title: 'Commande confirmée',
       order
     });
   } catch (error) {
-    console.error('Erreur handleSuccess:', error);
-    return res.status(500).send('Erreur confirmation paiement');
+    console.error('Erreur handlePaymentSuccess:', error);
+    res.status(500).send('Erreur confirmation paiement');
   }
 };
 
-exports.handleCancel = async (req, res) => {
-  return res.render('cancel', {
+exports.handlePaymentCancel = (req, res) => {
+  res.render('cancel', {
     title: 'Paiement annulé'
   });
 };
