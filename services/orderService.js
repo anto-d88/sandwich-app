@@ -1,16 +1,39 @@
 const supabase = require('../config/supabaseClient');
 
-async function countOrdersBySlot(deliverySlot) {
-  const { count, error } = await supabase
+async function createOrderWithItems(orderPayload, cart) {
+  const total = cart.reduce((sum, item) => {
+    return sum + Number(item.price) * Number(item.quantity);
+  }, 0);
+
+  const { data: order, error: orderError } = await supabase
     .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('delivery_slot', deliverySlot);
+    .insert([{
+      ...orderPayload,
+      total_price: total
+    }])
+    .select()
+    .single();
 
-  if (error) {
-    throw error;
-  }
+  if (orderError) throw orderError;
 
-  return count || 0;
+  const orderItems = cart.map(item => ({
+    order_id: order.id,
+    product_id: Number(item.id) || null,
+    product_name: item.name,
+    unit_price: Number(item.price),
+    quantity: Number(item.quantity),
+    line_total: Number(item.price) * Number(item.quantity)
+  }));
+
+  const { error: itemsError } = await supabase
+    .from('order_items')
+    .insert(orderItems);
+
+  if (itemsError) throw itemsError;
+
+  await decrementStockFromCart(cart);
+
+  return order;
 }
 
 async function getOrderByStripeSessionId(stripeSessionId) {
@@ -20,109 +43,60 @@ async function getOrderByStripeSessionId(stripeSessionId) {
     .eq('stripe_session_id', stripeSessionId)
     .maybeSingle();
 
-  if (error) {
-    throw error;
+  if (error) throw error;
+  return data;
+}
+
+async function countOrdersBySlot(deliverySlot) {
+  const { count, error } = await supabase
+    .from('orders')
+    .select('*', { count: 'exact', head: true })
+    .eq('delivery_slot', deliverySlot);
+
+  if (error) throw error;
+  return count || 0;
+}
+
+async function decrementSingleProductStock(productId, quantity) {
+  const { data: product, error: productError } = await supabase
+    .from('products')
+    .select('id, name, stock_quantity')
+    .eq('id', productId)
+    .single();
+
+  if (productError) throw productError;
+
+  const currentStock = Number(product.stock_quantity || 0);
+  const orderedQty = Number(quantity || 0);
+  const newStock = currentStock - orderedQty;
+
+  if (newStock < 0) {
+    throw new Error(`Stock insuffisant pour ${product.name}`);
   }
 
-  return data;
+  const { error: updateError } = await supabase
+    .from('products')
+    .update({ stock_quantity: newStock })
+    .eq('id', productId);
+
+  if (updateError) throw updateError;
 }
 
 async function decrementStockFromCart(cart) {
   for (const item of cart) {
-
-    // 👉 CAS 1 : PRODUIT CLASSIQUE
-    if (!item.is_formula) {
-      const { data: product, error } = await supabase
-        .from('products')
-        .select('id, name, stock_quantity')
-        .eq('id', item.id)
-        .single();
-
-      if (error) throw error;
-
-      const newStock = Number(product.stock_quantity) - Number(item.quantity);
-
-      if (newStock < 0) {
-        throw new Error(`Stock insuffisant pour ${product.name}`);
-      }
-
-      await supabase
-        .from('products')
-        .update({ stock_quantity: newStock })
-        .eq('id', item.id);
-    }
-
-    // 👉 CAS 2 : FORMULE
     if (item.is_formula && item.formula_items) {
-
       for (const subItem of item.formula_items) {
-
-        const { data: product, error } = await supabase
-          .from('products')
-          .select('id, name, stock_quantity')
-          .eq('id', subItem.id)
-          .single();
-
-        if (error) throw error;
-
-        const newStock = Number(product.stock_quantity) - Number(item.quantity);
-
-        if (newStock < 0) {
-          throw new Error(`Stock insuffisant pour ${product.name}`);
-        }
-
-        await supabase
-          .from('products')
-          .update({ stock_quantity: newStock })
-          .eq('id', subItem.id);
+        await decrementSingleProductStock(subItem.id, item.quantity);
       }
+    } else {
+      await decrementSingleProductStock(item.id, item.quantity);
     }
   }
-}
-
-async function createOrderWithItems(orderPayload, cart) {
-  const existingOrder = orderPayload.stripe_session_id
-    ? await getOrderByStripeSessionId(orderPayload.stripe_session_id)
-    : null;
-
-  if (existingOrder) {
-    return existingOrder;
-  }
-
-  const { data: order, error: orderError } = await supabase
-    .from('orders')
-    .insert([orderPayload])
-    .select()
-    .single();
-
-  if (orderError) {
-    throw orderError;
-  }
-
-  const orderItemsPayload = cart.map(item => ({
-    order_id: order.id,
-    product_id: item.id,
-    product_name: item.name,
-    unit_price: item.price,
-    quantity: item.quantity
-  }));
-
-  const { error: itemsError } = await supabase
-    .from('order_items')
-    .insert(orderItemsPayload);
-
-  if (itemsError) {
-    throw itemsError;
-  }
-
-  // ✅ Décrémente le stock après insertion commande + lignes
-  await decrementStockFromCart(cart);
-
-  return order;
 }
 
 module.exports = {
   createOrderWithItems,
   getOrderByStripeSessionId,
-  countOrdersBySlot
+  countOrdersBySlot,
+  decrementStockFromCart
 };
