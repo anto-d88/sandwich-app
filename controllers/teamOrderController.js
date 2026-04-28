@@ -3,11 +3,40 @@ const teamOrderService = require('../services/teamOrderService');
 const stripeService = require('../services/stripeService');
 
 const FORMULE_PRICE = 7.50;
+const MAX_TEAM_ORDERS_PER_SLOT = 3;
 
-exports.getCreatePage = (req, res) => {
-  res.render('team-order-create', {
-    title: 'Créer une commande d’équipe'
-  });
+const DELIVERY_SLOTS = [
+  '11:30',
+  '12:00',
+  '12:30',
+  '13:00'
+];
+
+exports.getCreatePage = async (req, res) => {
+  try {
+    const slotsWithAvailability = [];
+
+    for (const slot of DELIVERY_SLOTS) {
+      const count = await teamOrderService.countTeamOrdersBySlot(slot);
+
+      slotsWithAvailability.push({
+        time: slot,
+        count,
+        max: MAX_TEAM_ORDERS_PER_SLOT,
+        isFull: count >= MAX_TEAM_ORDERS_PER_SLOT
+      });
+    }
+
+    res.render('team-order-create', {
+      title: 'Créer une commande d’équipe',
+      error: null,
+      old: {},
+      slots: slotsWithAvailability
+    });
+  } catch (error) {
+    console.error('Erreur getCreatePage:', error);
+    res.status(500).send('Erreur chargement commande équipe');
+  }
 };
 
 exports.createTeamOrder = async (req, res) => {
@@ -21,10 +50,27 @@ exports.createTeamOrder = async (req, res) => {
     } = req.body;
 
     const slotCount = await teamOrderService.countTeamOrdersBySlot(delivery_slot);
-    const MAX_TEAM_ORDERS_PER_SLOT = 3;
 
     if (slotCount >= MAX_TEAM_ORDERS_PER_SLOT) {
-      return res.status(400).send('Ce créneau équipe est complet. Merci de choisir un autre horaire.');
+      const slotsWithAvailability = [];
+
+      for (const slot of DELIVERY_SLOTS) {
+        const count = await teamOrderService.countTeamOrdersBySlot(slot);
+
+        slotsWithAvailability.push({
+          time: slot,
+          count,
+          max: MAX_TEAM_ORDERS_PER_SLOT,
+          isFull: count >= MAX_TEAM_ORDERS_PER_SLOT
+        });
+      }
+
+      return res.status(400).render('team-order-create', {
+        title: 'Créer une commande d’équipe',
+        error: `Le créneau ${delivery_slot} est complet. Merci de choisir une autre heure.`,
+        old: req.body,
+        slots: slotsWithAvailability
+      });
     }
 
     const teamOrder = await teamOrderService.createTeamOrder({

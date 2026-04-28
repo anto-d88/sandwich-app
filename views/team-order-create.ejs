@@ -10,29 +10,115 @@
     <section class="page-intro">
       <span class="section-badge">Commande d’équipe</span>
       <h1>Créer une commande d’équipe</h1>
-      <p>Créez une commande groupée et partagez-la avec vos collègues.</p>
-      <p style="margin-top: 18px; font-weight: 700;">
-  Sandwichs frais • Livraison incluse sur créneau fixe • Service pensé pour les équipes
-</p>
+      <p>
+        Créez un lien de commande pour votre équipe. Chacun ajoute son sandwich,
+        sa boisson, son dessert ou sa formule.
+      </p>
     </section>
 
-    <section class="checkout-box">
-      <form action="/team-order/create" method="POST" class="checkout-form">
-        <input type="text" name="team_name" placeholder="Nom de l’équipe / service" required>
-        <input type="text" name="contact_name" placeholder="Nom du contact" required>
-        <input type="text" name="contact_phone" placeholder="Téléphone du contact" required>
-        <input type="text" name="delivery_address" placeholder="Adresse de livraison" required>
+    <% if (error) { %>
+      <section class="team-error-box">
+        <h2>Créneau complet</h2>
+        <p><%= error %></p>
+        <p>Choisissez un autre créneau disponible ci-dessous.</p>
+      </section>
+    <% } %>
 
-        <select name="delivery_slot" required>
-          <option value="">Choisir un créneau</option>
-          <option value="11:30">11:30</option>
-          <option value="12:00">12:00</option>
-          <option value="12:30">12:30</option>
-          <option value="13:00">13:00</option>
-        </select>
+    <section class="checkout-layout">
+      <div class="checkout-box">
+        <h2>Informations de livraison</h2>
 
-        <button type="submit" class="btn btn-primary">Créer la commande d’équipe</button>
-      </form>
+        <form action="/team-order/create" method="POST" class="checkout-form">
+          <input
+            type="text"
+            name="team_name"
+            placeholder="Nom de l’équipe / entreprise"
+            value="<%= old.team_name || '' %>"
+            required
+          >
+
+          <input
+            type="text"
+            name="contact_name"
+            placeholder="Nom du responsable"
+            value="<%= old.contact_name || '' %>"
+            required
+          >
+
+          <input
+            type="text"
+            name="contact_phone"
+            placeholder="Téléphone"
+            value="<%= old.contact_phone || '' %>"
+            required
+          >
+
+          <input
+            type="text"
+            name="delivery_address"
+            placeholder="Adresse de livraison"
+            value="<%= old.delivery_address || '' %>"
+            required
+          >
+
+          <label>
+            Créneau de livraison
+            <select name="delivery_slot" required>
+              <option value="">Choisir un créneau</option>
+
+              <% slots.forEach(slot => { %>
+                <option
+                  value="<%= slot.time %>"
+                  <%= old.delivery_slot === slot.time ? 'selected' : '' %>
+                  <%= slot.isFull ? 'disabled' : '' %>
+                >
+                  <%= slot.time %>
+                  <% if (slot.isFull) { %>
+                    — Complet
+                  <% } else { %>
+                    — Disponible (<%= slot.max - slot.count %> place(s))
+                  <% } %>
+                </option>
+              <% }) %>
+            </select>
+          </label>
+
+          <button type="submit" class="btn btn-primary">
+            Créer la commande équipe
+          </button>
+        </form>
+      </div>
+
+      <aside class="checkout-box">
+        <h2>Créneaux disponibles</h2>
+
+        <div class="slot-list">
+          <% slots.forEach(slot => { %>
+            <div class="slot-item <%= slot.isFull ? 'slot-item--full' : '' %>">
+              <div>
+                <strong><%= slot.time %></strong>
+                <p>
+                  <% if (slot.isFull) { %>
+                    Complet
+                  <% } else { %>
+                    <%= slot.max - slot.count %> place(s) disponible(s)
+                  <% } %>
+                </p>
+              </div>
+
+              <% if (slot.isFull) { %>
+                <span class="status-badge status-nouvelle">Complet</span>
+              <% } else { %>
+                <span class="status-badge status-payee">Disponible</span>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+
+        <p style="margin-top:16px; color:#6b7280;">
+          Les livraisons sont organisées sur créneaux fixes pour éviter l’attente.
+        </p>
+      </aside>
     </section>
   </main>
 
