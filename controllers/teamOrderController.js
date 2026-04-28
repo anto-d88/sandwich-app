@@ -2,6 +2,8 @@ const productService = require('../services/productService');
 const teamOrderService = require('../services/teamOrderService');
 const stripeService = require('../services/stripeService');
 
+const FORMULE_PRICE = 7.50;
+
 exports.getCreatePage = (req, res) => {
   res.render('team-order-create', {
     title: 'Créer une commande d’équipe'
@@ -48,17 +50,13 @@ exports.getJoinPage = async (req, res) => {
     const products = await productService.getAllAvailableProducts();
     const items = await teamOrderService.getTeamOrderItems(teamOrderId);
 
-    const sandwiches = products.filter(p => p.category === 'sandwich');
-    const boissons = products.filter(p => p.category === 'boisson');
-    const desserts = products.filter(p => p.category === 'dessert');
-
     res.render('team-order-join', {
       title: `Commande équipe ${teamOrder.team_name}`,
       teamOrder,
       items,
-      sandwiches,
-      boissons,
-      desserts
+      sandwiches: products.filter(p => p.category === 'sandwich'),
+      boissons: products.filter(p => p.category === 'boisson'),
+      desserts: products.filter(p => p.category === 'dessert')
     });
   } catch (error) {
     console.error('Erreur getJoinPage:', error);
@@ -72,63 +70,72 @@ exports.addParticipantToTeamOrder = async (req, res) => {
     const participantName = req.body.participant_name;
     const mode = req.body.mode;
 
+    if (!participantName || !participantName.trim()) {
+      return res.status(400).send('Nom participant obligatoire');
+    }
+
     const products = await productService.getAllAvailableProducts();
 
-    // Produit seul : sandwich, boisson, dessert
     if (mode === 'sandwich' || mode === 'boisson' || mode === 'dessert') {
       const productId = Number(req.body.product_id);
       const quantity = Number(req.body.quantity) || 1;
-
       const product = products.find(p => p.id === productId);
 
       if (!product) {
         return res.redirect(`/team-order/${teamOrderId}`);
       }
 
-      await teamOrderService.addParticipantItem({
-        team_order_id: teamOrderId,
-        participant_name: participantName,
-        product_id: product.id,
-        item_type: 'single',
-        product_name: product.name,
-        unit_price: Number(product.price),
-        quantity
-      });
+      let finalPrice = Number(product.price);
+      let finalName = product.name;
 
-      return res.redirect(`/team-order/${teamOrderId}`);
-    }
+      if (mode === 'sandwich') {
+        const isJambon = (product.name || '').toLowerCase().includes('jambon');
+        const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
+        const cruditesChoice = req.body.crudites_choice || 'avec';
+        const rawCrudites = req.body.crudites;
+        const extraCheese = req.body.extra_cheese === 'on';
 
-    // Formule complète
-    if (mode === 'formule') {
-      const sandwichId = Number(req.body.sandwich_id);
-      const boissonId = Number(req.body.boisson_id);
-      const dessertId = Number(req.body.dessert_id);
+        let cruditesList = [];
 
-      const sandwich = products.find(p => p.id === sandwichId);
-      const boisson = products.find(p => p.id === boissonId);
-      const dessert = products.find(p => p.id === dessertId);
+        if (Array.isArray(rawCrudites)) {
+          cruditesList = rawCrudites;
+        } else if (typeof rawCrudites === 'string') {
+          cruditesList = [rawCrudites];
+        }
 
-      if (!sandwich || !boisson || !dessert) {
-        return res.status(400).send('Formule incomplète');
+        const options = [];
+
+        if (sauceChoice) {
+          options.push(sauceChoice);
+        }
+
+        if (cruditesChoice === 'sans') {
+          options.push('sans crudités');
+        } else {
+          options.push('avec crudités');
+
+          if (cruditesList.length > 0) {
+            finalPrice += cruditesList.length * 0.50;
+            options.push(`suppléments: ${cruditesList.join(', ')}`);
+          }
+        }
+
+        if (extraCheese) {
+          finalPrice += 0.50;
+          options.push('tranche de fromage');
+        }
+
+        finalName = `${product.name} (${options.join(', ')})`;
       }
 
-      const totalSepare =
-        Number(sandwich.price) +
-        Number(boisson.price) +
-        Number(dessert.price);
-
-      const prixFormule = Number((totalSepare - 0.20).toFixed(2));
-
       await teamOrderService.addParticipantItem({
         team_order_id: teamOrderId,
-        participant_name: participantName,
-        product_id: sandwich.id,
-        boisson_id: boisson.id,
-        dessert_id: dessert.id,
-        item_type: 'formule',
-        product_name: `Formule : ${sandwich.name} + ${boisson.name} + ${dessert.name}`,
-        unit_price: prixFormule,
-        quantity: 1
+        participant_name: participantName.trim(),
+        product_id: product.id,
+        item_type: 'single',
+        product_name: finalName,
+        unit_price: finalPrice,
+        quantity
       });
 
       return res.redirect(`/team-order/${teamOrderId}`);
@@ -138,6 +145,59 @@ exports.addParticipantToTeamOrder = async (req, res) => {
   } catch (error) {
     console.error('Erreur addParticipantToTeamOrder:', error);
     return res.status(500).send('Erreur ajout participant');
+  }
+};
+
+exports.getTeamFormulePage = async (req, res) => {
+  try {
+    const teamOrderId = Number(req.params.id);
+    const teamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
+    const products = await productService.getAllAvailableProducts();
+
+    res.render('team-order-formule', {
+      title: 'Formule équipe',
+      teamOrder,
+      sandwiches: products.filter(p => p.category === 'sandwich'),
+      boissons: products.filter(p => p.category === 'boisson'),
+      desserts: products.filter(p => p.category === 'dessert'),
+      formulePrice: FORMULE_PRICE
+    });
+  } catch (error) {
+    console.error('Erreur getTeamFormulePage:', error);
+    res.status(500).send('Erreur chargement formule équipe');
+  }
+};
+
+exports.addTeamFormule = async (req, res) => {
+  try {
+    const teamOrderId = Number(req.params.id);
+    const products = await productService.getAllAvailableProducts();
+
+    const participantName = req.body.participant_name;
+    const sandwich = products.find(p => p.id === Number(req.body.sandwich_id));
+    const boisson = products.find(p => p.id === Number(req.body.boisson_id));
+    const dessert = products.find(p => p.id === Number(req.body.dessert_id));
+
+    if (!participantName || !sandwich || !boisson || !dessert) {
+      return res.status(400).send('Formule incomplète');
+    }
+
+    await teamOrderService.addParticipantItem({
+      team_order_id: teamOrderId,
+      participant_name: participantName.trim(),
+      product_id: sandwich.id,
+      boisson_id: boisson.id,
+      dessert_id: dessert.id,
+      item_type: 'formule',
+      product_name: `Formule : ${sandwich.name} + ${boisson.name} + ${dessert.name}`,
+      unit_price: FORMULE_PRICE,
+      quantity: 1
+    });
+
+    res.redirect(`/team-order/${teamOrderId}`);
+  } catch (error) {
+    console.error('Erreur addTeamFormule:', error);
+    res.status(500).send('Erreur ajout formule équipe');
   }
 };
 
@@ -204,7 +264,6 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
 
     const teamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
 
-    // Important : éviter de décrémenter le stock plusieurs fois si la page est rechargée
     if (teamOrder.status !== 'payée') {
       await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
       await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
@@ -226,59 +285,5 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
   } catch (error) {
     console.error('Erreur handleTeamOrderPaymentSuccess:', error);
     return res.status(500).send('Erreur confirmation paiement équipe');
-  }
-};
-const FORMULE_PRICE = 7.50;
-
-exports.getTeamFormulePage = async (req, res) => {
-  try {
-    const teamOrderId = Number(req.params.id);
-    const teamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
-    const products = await productService.getAllAvailableProducts();
-
-    res.render('team-order-formule', {
-      title: 'Formule équipe',
-      teamOrder,
-      sandwiches: products.filter(p => p.category === 'sandwich'),
-      boissons: products.filter(p => p.category === 'boisson'),
-      desserts: products.filter(p => p.category === 'dessert'),
-      formulePrice: FORMULE_PRICE
-    });
-  } catch (error) {
-    console.error('Erreur getTeamFormulePage:', error);
-    res.status(500).send('Erreur chargement formule équipe');
-  }
-};
-
-exports.addTeamFormule = async (req, res) => {
-  try {
-    const teamOrderId = Number(req.params.id);
-    const products = await productService.getAllAvailableProducts();
-
-    const participantName = req.body.participant_name;
-    const sandwich = products.find(p => p.id === Number(req.body.sandwich_id));
-    const boisson = products.find(p => p.id === Number(req.body.boisson_id));
-    const dessert = products.find(p => p.id === Number(req.body.dessert_id));
-
-    if (!participantName || !sandwich || !boisson || !dessert) {
-      return res.status(400).send('Formule incomplète');
-    }
-
-    await teamOrderService.addParticipantItem({
-      team_order_id: teamOrderId,
-      participant_name: participantName,
-      product_id: sandwich.id,
-      boisson_id: boisson.id,
-      dessert_id: dessert.id,
-      item_type: 'formule',
-      product_name: `Formule : ${sandwich.name} + ${boisson.name} + ${dessert.name}`,
-      unit_price: FORMULE_PRICE,
-      quantity: 1
-    });
-
-    res.redirect(`/team-order/${teamOrderId}`);
-  } catch (error) {
-    console.error('Erreur addTeamFormule:', error);
-    res.status(500).send('Erreur ajout formule équipe');
   }
 };
