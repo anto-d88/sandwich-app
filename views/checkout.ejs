@@ -17,7 +17,7 @@
       </p>
     </section>
 
-    <% if (error) { %>
+    <% if (typeof error !== 'undefined' && error) { %>
       <section class="team-error-box">
         <h2>Créneau indisponible</h2>
         <p><%= error %></p>
@@ -34,14 +34,16 @@
             <p>
               <strong><%= item.name %></strong> x <%= item.quantity %>
             </p>
-            <p><%= (Number(item.price) * item.quantity).toFixed(2).replace('.', ',') %> €</p>
+            <p>
+              <%= (Number(item.price) * Number(item.quantity)).toFixed(2).replace('.', ',') %> €
+            </p>
           </div>
         <% }) %>
 
         <hr>
 
         <p class="checkout-total">
-          <strong>Total : <%= total.toFixed(2).replace('.', ',') %> €</strong>
+          <strong>Total : <%= Number(total).toFixed(2).replace('.', ',') %> €</strong>
         </p>
 
         <p style="color:#16a34a; font-weight:700; margin-top:16px;">
@@ -57,7 +59,7 @@
             type="text"
             name="customer_name"
             placeholder="Nom complet"
-            value="<%= old.customer_name || '' %>"
+            value="<%= typeof old !== 'undefined' ? (old.customer_name || '') : '' %>"
             required
           >
 
@@ -65,7 +67,7 @@
             type="text"
             name="customer_phone"
             placeholder="Téléphone"
-            value="<%= old.customer_phone || '' %>"
+            value="<%= typeof old !== 'undefined' ? (old.customer_phone || '') : '' %>"
             required
           >
 
@@ -73,7 +75,7 @@
             type="email"
             name="customer_email"
             placeholder="Email"
-            value="<%= old.customer_email || '' %>"
+            value="<%= typeof old !== 'undefined' ? (old.customer_email || '') : '' %>"
             required
           >
 
@@ -81,14 +83,14 @@
             type="text"
             name="company_name"
             placeholder="Nom du call center / entreprise"
-            value="<%= old.company_name || '' %>"
+            value="<%= typeof old !== 'undefined' ? (old.company_name || '') : '' %>"
           >
 
           <input
             type="text"
             name="delivery_address"
             placeholder="Adresse de livraison"
-            value="<%= old.delivery_address || '' %>"
+            value="<%= typeof old !== 'undefined' ? (old.delivery_address || '') : '' %>"
             required
           >
 
@@ -100,7 +102,7 @@
               <% slots.forEach(slot => { %>
                 <option
                   value="<%= slot.time %>"
-                  <%= old.delivery_slot === slot.time ? 'selected' : '' %>
+                  <%= typeof old !== 'undefined' && old.delivery_slot === slot.time ? 'selected' : '' %>
                   <%= slot.isUnavailable ? 'disabled' : '' %>
                 >
                   <%= slot.time.replace(':00', 'h') %>

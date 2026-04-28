@@ -23,6 +23,7 @@ async function getSlotsWithAvailability() {
 
   for (const slot of DELIVERY_SLOTS) {
     const count = await orderService.countOrdersBySlot(slot);
+
     const isFull = count >= MAX_ORDERS_PER_SLOT;
     const isClosed = isSlotClosed(slot);
 
@@ -48,16 +49,19 @@ exports.getCheckoutPage = async (req, res) => {
     }
 
     const total = getCartTotal(cart);
+
+    // 🔥 IMPORTANT
     const slots = await getSlotsWithAvailability();
 
     res.render('checkout', {
       title: 'Finaliser la commande',
       cart,
       total,
-      slots,
+      slots, // 🔥 C’EST ÇA QUI MANQUAIT
       error: null,
       old: {}
     });
+
   } catch (error) {
     console.error('Erreur getCheckoutPage:', error);
     res.status(500).send('Erreur chargement paiement');
@@ -82,38 +86,38 @@ exports.createCheckoutSession = async (req, res) => {
     } = req.body;
 
     const slots = await getSlotsWithAvailability();
-    const selectedSlot = slots.find(slot => slot.time === delivery_slot);
+    const selectedSlot = slots.find(s => s.time === delivery_slot);
     const total = getCartTotal(cart);
 
     if (!selectedSlot) {
-      return res.status(400).render('checkout', {
+      return res.render('checkout', {
         title: 'Finaliser la commande',
         cart,
         total,
         slots,
-        error: 'Créneau invalide. Merci de choisir un créneau disponible.',
+        error: 'Créneau invalide',
         old: req.body
       });
     }
 
     if (selectedSlot.isClosed) {
-      return res.status(400).render('checkout', {
+      return res.render('checkout', {
         title: 'Finaliser la commande',
         cart,
         total,
         slots,
-        error: `Les commandes pour ${delivery_slot.replace(':00', 'h')} sont clôturées 50 minutes avant la livraison. Merci de choisir un autre créneau.`,
+        error: `Créneau ${delivery_slot} fermé`,
         old: req.body
       });
     }
 
     if (selectedSlot.isFull) {
-      return res.status(400).render('checkout', {
+      return res.render('checkout', {
         title: 'Finaliser la commande',
         cart,
         total,
         slots,
-        error: `Le créneau ${delivery_slot.replace(':00', 'h')} est complet. Merci de choisir une autre heure.`,
+        error: `Créneau ${delivery_slot} complet`,
         old: req.body
       });
     }
@@ -135,9 +139,10 @@ exports.createCheckoutSession = async (req, res) => {
     });
 
     return res.redirect(session.url);
+
   } catch (error) {
     console.error('Erreur createCheckoutSession:', error);
-    return res.status(500).send(error.message || 'Erreur Stripe');
+    res.status(500).send('Erreur paiement');
   }
 };
 
@@ -170,10 +175,6 @@ exports.handlePaymentSuccess = async (req, res) => {
     const cart = req.session.cart || [];
     const pendingOrder = req.session.pendingOrder;
 
-    if (!cart.length || !pendingOrder) {
-      return res.redirect('/menu');
-    }
-
     const order = await orderService.createOrderWithItems(
       {
         ...pendingOrder,
@@ -190,9 +191,10 @@ exports.handlePaymentSuccess = async (req, res) => {
       title: 'Commande confirmée',
       order
     });
+
   } catch (error) {
-    console.error('Erreur handlePaymentSuccess:', error);
-    res.status(500).send('Erreur confirmation paiement');
+    console.error('Erreur payment success:', error);
+    res.status(500).send('Erreur confirmation');
   }
 };
 

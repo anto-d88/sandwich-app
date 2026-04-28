@@ -135,18 +135,71 @@ exports.removeFromCart = (req, res) => {
   res.redirect('/cart');
 };
 
-exports.getCheckoutPage = (req, res) => {
-  const cart = req.session.cart || [];
+const orderService = require('../services/orderService');
 
-  if (!cart.length) {
-    return res.redirect('/cart');
+const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+const MAX_ORDERS_PER_SLOT = 10;
+
+function isSlotClosed(slotTime) {
+  const now = new Date();
+
+  const [hours, minutes] = slotTime.split(':').map(Number);
+
+  const slotDate = new Date();
+  slotDate.setHours(hours, minutes, 0, 0);
+
+  const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
+
+  return now >= cutoffDate;
+}
+
+async function getSlotsWithAvailability() {
+  const slots = [];
+
+  for (const slot of DELIVERY_SLOTS) {
+    const count = await orderService.countOrdersBySlot(slot);
+
+    const isFull = count >= MAX_ORDERS_PER_SLOT;
+    const isClosed = isSlotClosed(slot);
+
+    slots.push({
+      time: slot,
+      count,
+      max: MAX_ORDERS_PER_SLOT,
+      isFull,
+      isClosed,
+      isUnavailable: isFull || isClosed
+    });
   }
 
-  const total = getCartTotal(cart);
+  return slots;
+}
 
-  res.render('checkout', {
-    title: 'Commande',
-    cart,
-    total
-  });
+exports.getCheckoutPage = async (req, res) => {
+  try {
+    const cart = req.session.cart || [];
+
+    if (!cart.length) {
+      return res.redirect('/cart');
+    }
+
+    const total = cart.reduce((sum, item) => {
+      return sum + item.price * item.quantity;
+    }, 0);
+
+    const slots = await getSlotsWithAvailability(); // 🔥 IMPORTANT
+
+    res.render('checkout', {
+      title: 'Finaliser la commande' ,
+      cart,
+      total,
+      slots,   // 🔥 MANQUAIT
+      error: null,
+      old: {}
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Erreur checkout');
+  }
 };
