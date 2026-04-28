@@ -71,9 +71,16 @@ exports.addToCart = async (req, res) => {
           options.push(`suppléments: ${cruditesList.join(', ')}`);
         }
 
-        if (cruditesList.includes('oeuf')) {
-          finalPrice += 0.50;
-        }
+        if (cruditesChoice === 'sans') {
+  options.push('sans crudités');
+} else {
+  options.push('avec crudités');
+
+  if (cruditesList.length > 0) {
+    finalPrice += cruditesList.length * 0.50;
+    options.push(`suppléments: ${cruditesList.join(', ')}`);
+  }
+}
       }
 
       if (extraCheese) {
