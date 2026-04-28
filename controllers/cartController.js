@@ -1,5 +1,85 @@
 const supabase = require('../config/supabaseClient');
 const getCartTotal = require('../utils/getCartTotal');
+const orderService = require('../services/orderService');
+
+const MAX_ORDERS_PER_SLOT = 10;
+const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+
+function getParisNow() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+}
+
+function formatHour(slotTime) {
+  return slotTime.replace(':00', 'h');
+}
+
+function getDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function createSlotDate(slotTime, dayOffset = 0) {
+  const now = getParisNow();
+  const [hours, minutes] = slotTime.split(':').map(Number);
+
+  const slotDate = new Date(now);
+  slotDate.setDate(slotDate.getDate() + dayOffset);
+  slotDate.setHours(hours, minutes, 0, 0);
+
+  return slotDate;
+}
+
+function isTodaySlotClosed(slotTime) {
+  const now = getParisNow();
+  const slotDate = createSlotDate(slotTime, 0);
+  const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
+
+  return now >= cutoffDate;
+}
+
+function getEffectiveSlot(slotTime) {
+  const closedToday = isTodaySlotClosed(slotTime);
+  const dayOffset = closedToday ? 1 : 0;
+  const slotDate = createSlotDate(slotTime, dayOffset);
+
+  const dayLabel = dayOffset === 0 ? 'Aujourd’hui' : 'Demain';
+  const hourLabel = formatHour(slotTime);
+  const label = `${dayLabel} ${hourLabel}`;
+  const value = `${getDateKey(slotDate)}|${slotTime}`;
+
+  return {
+    time: slotTime,
+    value,
+    label,
+    dayLabel,
+    hourLabel,
+    dateKey: getDateKey(slotDate),
+    isTomorrow: dayOffset === 1
+  };
+}
+
+async function getSlotsWithAvailability() {
+  const slots = [];
+
+  for (const slotTime of DELIVERY_SLOTS) {
+    const effectiveSlot = getEffectiveSlot(slotTime);
+    const count = await orderService.countOrdersBySlot(effectiveSlot.value);
+    const isFull = count >= MAX_ORDERS_PER_SLOT;
+
+    slots.push({
+      ...effectiveSlot,
+      count,
+      max: MAX_ORDERS_PER_SLOT,
+      isFull,
+      isClosed: false,
+      isUnavailable: isFull
+    });
+  }
+
+  return slots;
+}
 
 exports.getCartPage = (req, res) => {
   const cart = req.session.cart || [];
@@ -68,19 +148,9 @@ exports.addToCart = async (req, res) => {
         options.push('avec crudités');
 
         if (cruditesList.length > 0) {
+          finalPrice += cruditesList.length * 0.50;
           options.push(`suppléments: ${cruditesList.join(', ')}`);
         }
-
-        if (cruditesChoice === 'sans') {
-  options.push('sans crudités');
-} else {
-  options.push('avec crudités');
-
-  if (cruditesList.length > 0) {
-    finalPrice += cruditesList.length * 0.50;
-    options.push(`suppléments: ${cruditesList.join(', ')}`);
-  }
-}
       }
 
       if (extraCheese) {
@@ -117,7 +187,6 @@ exports.addToCart = async (req, res) => {
     }
 
     req.session.cart = cart;
-
     res.redirect('/cart');
   } catch (error) {
     console.error('Erreur addToCart:', error);
@@ -135,46 +204,6 @@ exports.removeFromCart = (req, res) => {
   res.redirect('/cart');
 };
 
-const orderService = require('../services/orderService');
-
-const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
-const MAX_ORDERS_PER_SLOT = 10;
-
-function isSlotClosed(slotTime) {
-  const now = new Date();
-
-  const [hours, minutes] = slotTime.split(':').map(Number);
-
-  const slotDate = new Date();
-  slotDate.setHours(hours, minutes, 0, 0);
-
-  const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
-
-  return now >= cutoffDate;
-}
-
-async function getSlotsWithAvailability() {
-  const slots = [];
-
-  for (const slot of DELIVERY_SLOTS) {
-    const count = await orderService.countOrdersBySlot(slot);
-
-    const isFull = count >= MAX_ORDERS_PER_SLOT;
-    const isClosed = isSlotClosed(slot);
-
-    slots.push({
-      time: slot,
-      count,
-      max: MAX_ORDERS_PER_SLOT,
-      isFull,
-      isClosed,
-      isUnavailable: isFull || isClosed
-    });
-  }
-
-  return slots;
-}
-
 exports.getCheckoutPage = async (req, res) => {
   try {
     const cart = req.session.cart || [];
@@ -183,23 +212,19 @@ exports.getCheckoutPage = async (req, res) => {
       return res.redirect('/cart');
     }
 
-    const total = cart.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
-    }, 0);
-
-    const slots = await getSlotsWithAvailability(); // 🔥 IMPORTANT
+    const total = getCartTotal(cart);
+    const slots = await getSlotsWithAvailability();
 
     res.render('checkout', {
-      title: 'Finaliser la commande' ,
+      title: 'Finaliser la commande',
       cart,
       total,
-      slots,   // 🔥 MANQUAIT
+      slots,
       error: null,
       old: {}
     });
-
   } catch (error) {
-    console.error(error);
+    console.error('Erreur getCheckoutPage:', error);
     res.status(500).send('Erreur checkout');
   }
 };

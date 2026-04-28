@@ -5,39 +5,80 @@ const stripeService = require('../services/stripeService');
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
 
-function isSlotClosed(slotTime) {
-  const now = new Date();
+function getParisNow() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+}
 
+function formatHour(slotTime) {
+  return slotTime.replace(':00', 'h');
+}
+
+function getDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function createSlotDate(slotTime, dayOffset = 0) {
+  const now = getParisNow();
   const [hours, minutes] = slotTime.split(':').map(Number);
 
-  const slotDate = new Date();
+  const slotDate = new Date(now);
+  slotDate.setDate(slotDate.getDate() + dayOffset);
   slotDate.setHours(hours, minutes, 0, 0);
 
+  return slotDate;
+}
+
+function isTodaySlotClosed(slotTime) {
+  const now = getParisNow();
+  const slotDate = createSlotDate(slotTime, 0);
   const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
 
   return now >= cutoffDate;
 }
 
+function getEffectiveSlot(slotTime) {
+  const closedToday = isTodaySlotClosed(slotTime);
+  const dayOffset = closedToday ? 1 : 0;
+  const slotDate = createSlotDate(slotTime, dayOffset);
+
+  const dayLabel = dayOffset === 0 ? 'Aujourd’hui' : 'Demain';
+  const hourLabel = formatHour(slotTime);
+  const label = `${dayLabel} ${hourLabel}`;
+  const value = `${getDateKey(slotDate)}|${slotTime}`;
+
+  return {
+    time: slotTime,
+    value,
+    label,
+    dayLabel,
+    hourLabel,
+    dateKey: getDateKey(slotDate),
+    isTomorrow: dayOffset === 1
+  };
+}
+
 async function getSlotsWithAvailability() {
-  const slotsWithAvailability = [];
+  const slots = [];
 
-  for (const slot of DELIVERY_SLOTS) {
-    const count = await orderService.countOrdersBySlot(slot);
-
+  for (const slotTime of DELIVERY_SLOTS) {
+    const effectiveSlot = getEffectiveSlot(slotTime);
+    const count = await orderService.countOrdersBySlot(effectiveSlot.value);
     const isFull = count >= MAX_ORDERS_PER_SLOT;
-    const isClosed = isSlotClosed(slot);
 
-    slotsWithAvailability.push({
-      time: slot,
+    slots.push({
+      ...effectiveSlot,
       count,
       max: MAX_ORDERS_PER_SLOT,
       isFull,
-      isClosed,
-      isUnavailable: isFull || isClosed
+      isClosed: false,
+      isUnavailable: isFull
     });
   }
 
-  return slotsWithAvailability;
+  return slots;
 }
 
 exports.getCheckoutPage = async (req, res) => {
@@ -49,19 +90,16 @@ exports.getCheckoutPage = async (req, res) => {
     }
 
     const total = getCartTotal(cart);
-
-    // 🔥 IMPORTANT
     const slots = await getSlotsWithAvailability();
 
     res.render('checkout', {
       title: 'Finaliser la commande',
       cart,
       total,
-      slots, // 🔥 C’EST ÇA QUI MANQUAIT
+      slots,
       error: null,
       old: {}
     });
-
   } catch (error) {
     console.error('Erreur getCheckoutPage:', error);
     res.status(500).send('Erreur chargement paiement');
@@ -86,38 +124,27 @@ exports.createCheckoutSession = async (req, res) => {
     } = req.body;
 
     const slots = await getSlotsWithAvailability();
-    const selectedSlot = slots.find(s => s.time === delivery_slot);
+    const selectedSlot = slots.find(slot => slot.value === delivery_slot);
     const total = getCartTotal(cart);
 
     if (!selectedSlot) {
-      return res.render('checkout', {
+      return res.status(400).render('checkout', {
         title: 'Finaliser la commande',
         cart,
         total,
         slots,
-        error: 'Créneau invalide',
-        old: req.body
-      });
-    }
-
-    if (selectedSlot.isClosed) {
-      return res.render('checkout', {
-        title: 'Finaliser la commande',
-        cart,
-        total,
-        slots,
-        error: `Créneau ${delivery_slot} fermé`,
+        error: 'Créneau invalide. Merci de choisir un créneau disponible.',
         old: req.body
       });
     }
 
     if (selectedSlot.isFull) {
-      return res.render('checkout', {
+      return res.status(400).render('checkout', {
         title: 'Finaliser la commande',
         cart,
         total,
         slots,
-        error: `Créneau ${delivery_slot} complet`,
+        error: `Le créneau ${selectedSlot.label} est complet. Merci de choisir une autre heure.`,
         old: req.body
       });
     }
@@ -128,7 +155,8 @@ exports.createCheckoutSession = async (req, res) => {
       customer_email,
       company_name,
       delivery_address,
-      delivery_slot
+      delivery_slot: selectedSlot.value,
+      delivery_slot_label: selectedSlot.label
     };
 
     req.session.pendingOrder = customer;
@@ -139,10 +167,9 @@ exports.createCheckoutSession = async (req, res) => {
     });
 
     return res.redirect(session.url);
-
   } catch (error) {
     console.error('Erreur createCheckoutSession:', error);
-    res.status(500).send('Erreur paiement');
+    return res.status(500).send(error.message || 'Erreur Stripe');
   }
 };
 
@@ -175,6 +202,10 @@ exports.handlePaymentSuccess = async (req, res) => {
     const cart = req.session.cart || [];
     const pendingOrder = req.session.pendingOrder;
 
+    if (!cart.length || !pendingOrder) {
+      return res.redirect('/menu');
+    }
+
     const order = await orderService.createOrderWithItems(
       {
         ...pendingOrder,
@@ -191,10 +222,9 @@ exports.handlePaymentSuccess = async (req, res) => {
       title: 'Commande confirmée',
       order
     });
-
   } catch (error) {
-    console.error('Erreur payment success:', error);
-    res.status(500).send('Erreur confirmation');
+    console.error('Erreur handlePaymentSuccess:', error);
+    res.status(500).send('Erreur confirmation paiement');
   }
 };
 

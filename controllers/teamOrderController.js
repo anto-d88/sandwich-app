@@ -4,37 +4,78 @@ const stripeService = require('../services/stripeService');
 
 const FORMULE_PRICE = 7.50;
 const MAX_TEAM_ORDERS_PER_SLOT = 3;
-
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
 
-function isSlotClosed(slotTime) {
-  const now = new Date();
+function getParisNow() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+}
 
+function formatHour(slotTime) {
+  return slotTime.replace(':00', 'h');
+}
+
+function getDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function createSlotDate(slotTime, dayOffset = 0) {
+  const now = getParisNow();
   const [hours, minutes] = slotTime.split(':').map(Number);
 
-  const slotDate = new Date();
+  const slotDate = new Date(now);
+  slotDate.setDate(slotDate.getDate() + dayOffset);
   slotDate.setHours(hours, minutes, 0, 0);
 
+  return slotDate;
+}
+
+function isTodaySlotClosed(slotTime) {
+  const now = getParisNow();
+  const slotDate = createSlotDate(slotTime, 0);
   const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
 
   return now >= cutoffDate;
 }
 
+function getEffectiveSlot(slotTime) {
+  const closedToday = isTodaySlotClosed(slotTime);
+  const dayOffset = closedToday ? 1 : 0;
+  const slotDate = createSlotDate(slotTime, dayOffset);
+
+  const dayLabel = dayOffset === 0 ? 'Aujourd’hui' : 'Demain';
+  const hourLabel = formatHour(slotTime);
+  const label = `${dayLabel} ${hourLabel}`;
+  const value = `${getDateKey(slotDate)}|${slotTime}`;
+
+  return {
+    time: slotTime,
+    value,
+    label,
+    dayLabel,
+    hourLabel,
+    dateKey: getDateKey(slotDate),
+    isTomorrow: dayOffset === 1
+  };
+}
+
 async function getSlotsWithAvailability() {
   const slotsWithAvailability = [];
 
-  for (const slot of DELIVERY_SLOTS) {
-    const count = await teamOrderService.countTeamOrdersBySlot(slot);
+  for (const slotTime of DELIVERY_SLOTS) {
+    const effectiveSlot = getEffectiveSlot(slotTime);
+    const count = await teamOrderService.countTeamOrdersBySlot(effectiveSlot.value);
     const isFull = count >= MAX_TEAM_ORDERS_PER_SLOT;
-    const isClosed = isSlotClosed(slot);
 
     slotsWithAvailability.push({
-      time: slot,
+      ...effectiveSlot,
       count,
       max: MAX_TEAM_ORDERS_PER_SLOT,
       isFull,
-      isClosed,
-      isUnavailable: isFull || isClosed
+      isClosed: false,
+      isUnavailable: isFull
     });
   }
 
@@ -68,7 +109,7 @@ exports.createTeamOrder = async (req, res) => {
     } = req.body;
 
     const slotsWithAvailability = await getSlotsWithAvailability();
-    const selectedSlot = slotsWithAvailability.find(slot => slot.time === delivery_slot);
+    const selectedSlot = slotsWithAvailability.find(slot => slot.value === delivery_slot);
 
     if (!selectedSlot) {
       return res.status(400).render('team-order-create', {
@@ -79,19 +120,10 @@ exports.createTeamOrder = async (req, res) => {
       });
     }
 
-    if (selectedSlot.isClosed) {
-      return res.status(400).render('team-order-create', {
-        title: 'Créer une commande d’équipe',
-        error: `Les commandes pour ${delivery_slot} sont clôturées 50 minutes avant la livraison. Merci de choisir un autre créneau.`,
-        old: req.body,
-        slots: slotsWithAvailability
-      });
-    }
-
     if (selectedSlot.isFull) {
       return res.status(400).render('team-order-create', {
         title: 'Créer une commande d’équipe',
-        error: `Le créneau ${delivery_slot} est complet. Merci de choisir une autre heure.`,
+        error: `Le créneau ${selectedSlot.label} est complet. Merci de choisir une autre heure.`,
         old: req.body,
         slots: slotsWithAvailability
       });
@@ -102,7 +134,8 @@ exports.createTeamOrder = async (req, res) => {
       contact_name,
       contact_phone,
       delivery_address,
-      delivery_slot,
+      delivery_slot: selectedSlot.value,
+      delivery_slot_label: selectedSlot.label,
       status: 'ouverte'
     });
 
