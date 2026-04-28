@@ -5,27 +5,45 @@ const stripeService = require('../services/stripeService');
 const FORMULE_PRICE = 7.50;
 const MAX_TEAM_ORDERS_PER_SLOT = 3;
 
-const DELIVERY_SLOTS = [
-  '11:30',
-  '12:00',
-  '12:30',
-  '13:00'
-];
+const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+
+function isSlotClosed(slotTime) {
+  const now = new Date();
+
+  const [hours, minutes] = slotTime.split(':').map(Number);
+
+  const slotDate = new Date();
+  slotDate.setHours(hours, minutes, 0, 0);
+
+  const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
+
+  return now >= cutoffDate;
+}
+
+async function getSlotsWithAvailability() {
+  const slotsWithAvailability = [];
+
+  for (const slot of DELIVERY_SLOTS) {
+    const count = await teamOrderService.countTeamOrdersBySlot(slot);
+    const isFull = count >= MAX_TEAM_ORDERS_PER_SLOT;
+    const isClosed = isSlotClosed(slot);
+
+    slotsWithAvailability.push({
+      time: slot,
+      count,
+      max: MAX_TEAM_ORDERS_PER_SLOT,
+      isFull,
+      isClosed,
+      isUnavailable: isFull || isClosed
+    });
+  }
+
+  return slotsWithAvailability;
+}
 
 exports.getCreatePage = async (req, res) => {
   try {
-    const slotsWithAvailability = [];
-
-    for (const slot of DELIVERY_SLOTS) {
-      const count = await teamOrderService.countTeamOrdersBySlot(slot);
-
-      slotsWithAvailability.push({
-        time: slot,
-        count,
-        max: MAX_TEAM_ORDERS_PER_SLOT,
-        isFull: count >= MAX_TEAM_ORDERS_PER_SLOT
-      });
-    }
+    const slotsWithAvailability = await getSlotsWithAvailability();
 
     res.render('team-order-create', {
       title: 'Créer une commande d’équipe',
@@ -49,22 +67,28 @@ exports.createTeamOrder = async (req, res) => {
       delivery_slot
     } = req.body;
 
-    const slotCount = await teamOrderService.countTeamOrdersBySlot(delivery_slot);
+    const slotsWithAvailability = await getSlotsWithAvailability();
+    const selectedSlot = slotsWithAvailability.find(slot => slot.time === delivery_slot);
 
-    if (slotCount >= MAX_TEAM_ORDERS_PER_SLOT) {
-      const slotsWithAvailability = [];
+    if (!selectedSlot) {
+      return res.status(400).render('team-order-create', {
+        title: 'Créer une commande d’équipe',
+        error: 'Créneau invalide. Merci de choisir un créneau disponible.',
+        old: req.body,
+        slots: slotsWithAvailability
+      });
+    }
 
-      for (const slot of DELIVERY_SLOTS) {
-        const count = await teamOrderService.countTeamOrdersBySlot(slot);
+    if (selectedSlot.isClosed) {
+      return res.status(400).render('team-order-create', {
+        title: 'Créer une commande d’équipe',
+        error: `Les commandes pour ${delivery_slot} sont clôturées 50 minutes avant la livraison. Merci de choisir un autre créneau.`,
+        old: req.body,
+        slots: slotsWithAvailability
+      });
+    }
 
-        slotsWithAvailability.push({
-          time: slot,
-          count,
-          max: MAX_TEAM_ORDERS_PER_SLOT,
-          isFull: count >= MAX_TEAM_ORDERS_PER_SLOT
-        });
-      }
-
+    if (selectedSlot.isFull) {
       return res.status(400).render('team-order-create', {
         title: 'Créer une commande d’équipe',
         error: `Le créneau ${delivery_slot} est complet. Merci de choisir une autre heure.`,

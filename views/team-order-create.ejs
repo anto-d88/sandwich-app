@@ -14,11 +14,15 @@
         Créez un lien de commande pour votre équipe. Chacun ajoute son sandwich,
         sa boisson, son dessert ou sa formule.
       </p>
+      <p>
+        Créneaux disponibles : <strong>11h, 13h et 15h</strong>.
+        Les commandes ferment <strong>50 minutes avant chaque livraison</strong>.
+      </p>
     </section>
 
     <% if (error) { %>
       <section class="team-error-box">
-        <h2>Créneau complet</h2>
+        <h2>Créneau indisponible</h2>
         <p><%= error %></p>
         <p>Choisissez un autre créneau disponible ci-dessous.</p>
       </section>
@@ -70,11 +74,13 @@
                 <option
                   value="<%= slot.time %>"
                   <%= old.delivery_slot === slot.time ? 'selected' : '' %>
-                  <%= slot.isFull ? 'disabled' : '' %>
+                  <%= slot.isUnavailable ? 'disabled' : '' %>
                 >
-                  <%= slot.time %>
+                  <%= slot.time.replace(':00', 'h') %>
                   <% if (slot.isFull) { %>
                     — Complet
+                  <% } else if (slot.isClosed) { %>
+                    — Commandes clôturées
                   <% } else { %>
                     — Disponible (<%= slot.max - slot.count %> place(s))
                   <% } %>
@@ -94,12 +100,15 @@
 
         <div class="slot-list">
           <% slots.forEach(slot => { %>
-            <div class="slot-item <%= slot.isFull ? 'slot-item--full' : '' %>">
+            <div class="slot-item <%= slot.isUnavailable ? 'slot-item--full' : '' %>">
               <div>
-                <strong><%= slot.time %></strong>
+                <strong><%= slot.time.replace(':00', 'h') %></strong>
+
                 <p>
                   <% if (slot.isFull) { %>
                     Complet
+                  <% } else if (slot.isClosed) { %>
+                    Commandes clôturées
                   <% } else { %>
                     <%= slot.max - slot.count %> place(s) disponible(s)
                   <% } %>
@@ -108,6 +117,8 @@
 
               <% if (slot.isFull) { %>
                 <span class="status-badge status-nouvelle">Complet</span>
+              <% } else if (slot.isClosed) { %>
+                <span class="status-badge status-en-preparation">Clôturé</span>
               <% } else { %>
                 <span class="status-badge status-payee">Disponible</span>
               <% } %>
@@ -116,7 +127,7 @@
         </div>
 
         <p style="margin-top:16px; color:#6b7280;">
-          Les livraisons sont organisées sur créneaux fixes pour éviter l’attente.
+          Exemple : pour une livraison à 11h, les commandes ferment à 10h10.
         </p>
       </aside>
     </section>
