@@ -109,7 +109,7 @@
                   <% if (slot.isFull) { %>
                     — Complet
                   <% } else { %>
-                    — Disponible
+                    — Commande ouverte pour demain
                   <% } %>
                 </option>
               <% }) %>
@@ -134,7 +134,7 @@
                 <% if (slot.isFull) { %>
                   Complet
                 <% } else { %>
-                  <%= slot.max - slot.count %> place(s) disponible(s)
+                  <%= slot.max - slot.count %> Commande ouverte pour demain
                 <% } %>
               </p>
             </div>
