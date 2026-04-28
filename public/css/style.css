@@ -863,3 +863,78 @@ button {
 .option-check input {
   width: auto;
 }
+
+.team-name-box {
+  margin-bottom: 24px;
+}
+
+.team-name-box p {
+  margin-top: 10px;
+  color: #6b7280;
+}
+
+.team-product-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.form-row {
+  display: grid;
+  gap: 6px;
+}
+
+.form-row label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.extras-box {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.extras-box p {
+  margin: 0 0 4px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.extra-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.extra-pill input {
+  width: auto;
+  min-width: auto;
+  padding: 0;
+}
+
+.cheese-pill {
+  border-color: #fdba74;
+  background: #fff7ed;
+}
+
+.extras-disabled {
+  opacity: 0.45;
+  background: #f3f4f6;
+}
+
+.team-add-btn {
+  margin-top: 4px;
+}

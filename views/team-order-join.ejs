@@ -8,96 +8,310 @@
 
   <main class="container">
     <section class="page-intro">
+      <span class="section-badge">Commande d’équipe</span>
       <h1><%= teamOrder.team_name %></h1>
+      <p>Créneau : <strong><%= teamOrder.delivery_slot %></strong></p>
+      <p>Adresse : <strong><%= teamOrder.delivery_address %></strong></p>
+
+      <div class="hero__actions">
+        <a href="/team-order/<%= teamOrder.id %>/summary" class="btn btn-secondary">
+          Voir le résumé équipe
+        </a>
+
+        <a href="/team-order/<%= teamOrder.id %>/formule" class="btn btn-primary">
+          Composer une formule
+        </a>
+      </div>
     </section>
 
-    <section class="checkout-box">
-      <input type="text" id="participant_name" placeholder="Ton prénom" required>
+    <section class="menu-top-banner">
+      <div>
+        <strong>Formule complète</strong>
+        <p>Sandwich + boisson + dessert à 7,50€ — économie de 1€</p>
+      </div>
+      <div>
+        <a href="/team-order/<%= teamOrder.id %>/formule" class="btn btn-primary">
+          Créer une formule
+        </a>
+      </div>
+    </section>
+
+    <section class="checkout-box team-name-box">
+      <h2>Votre nom</h2>
+      <input type="text" id="participant_name" placeholder="Votre prénom / nom" required>
+      <p>Entrez votre nom avant d’ajouter un produit à la commande d’équipe.</p>
+    </section>
+
+    <section class="page-intro">
+      <h2>🥪 Sandwichs seuls</h2>
+      <p>Ajoutez uniquement un sandwich à la commande d’équipe.</p>
     </section>
 
     <div class="products-grid">
       <% sandwiches.forEach(product => { %>
         <article class="product-card product-card--pro">
-
           <div class="product-image-wrap">
-            <img src="<%= product.image_url %>" class="product-image">
+            <img
+              src="<%= product.image_url || '/images/default-product.jpg' %>"
+              alt="<%= product.name %>"
+              class="product-image"
+            >
           </div>
 
           <div class="product-card__content">
+            <span class="product-category">sandwich</span>
             <h2><%= product.name %></h2>
+            <p class="product-description"><%= product.description || '' %></p>
 
-            <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-form">
+            <% if (product.stock_quantity <= 0) { %>
+              <span class="product-badge product-badge--danger">Rupture</span>
+              <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
+            <% } else if (product.stock_quantity <= 3) { %>
+              <span class="product-badge">🔥 Très demandé</span>
+              <p class="stock-warning stock-warning--danger">⚠️ Plus que quelques sandwichs disponibles</p>
+            <% } else if (product.stock_quantity <= 6) { %>
+              <p class="stock-warning">⏳ Stock limité aujourd’hui</p>
+            <% } else { %>
+              <p class="stock-ok">✔ Disponible</p>
+            <% } %>
 
-              <input type="hidden" name="product_id" value="<%= product.id %>">
-              <input type="hidden" name="participant_name" class="hidden-name">
-              <input type="hidden" name="mode" value="sandwich">
+            <p class="product-price">4,50 €</p>
 
-              <input type="number" name="quantity" value="1" min="1">
+            <% if (product.stock_quantity <= 0) { %>
+              <button class="btn btn-danger" disabled>Rupture</button>
+            <% } else { %>
+              <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-product-form">
+                <input type="hidden" name="mode" value="sandwich">
+                <input type="hidden" name="participant_name" class="participant-name-hidden">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
 
-              <% if (product.name.toLowerCase().includes('jambon')) { %>
-                <select name="sauce_choice">
-                  <option value="beurre">Beurre</option>
-                  <option value="mayonnaise">Mayonnaise</option>
-                </select>
-              <% } %>
+                <div class="form-row">
+                  <label>Quantité</label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value="1"
+                    min="1"
+                    max="<%= product.stock_quantity %>"
+                    class="qty-input"
+                  >
+                </div>
 
-              <select name="crudites_choice" class="crudites-select">
-                <option value="avec">Avec crudités</option>
-                <option value="sans">Sans crudités</option>
-              </select>
+                <% if ((product.name || '').toLowerCase().includes('jambon')) { %>
+                  <div class="form-row">
+                    <label>Base</label>
+                    <select name="sauce_choice" required>
+                      <option value="beurre">Beurre</option>
+                      <option value="mayonnaise">Mayonnaise</option>
+                    </select>
+                  </div>
+                <% } %>
 
-              <div class="crudites-options">
-                <label><input type="checkbox" name="crudites" value="salade"> salade +0,50€</label>
-                <label><input type="checkbox" name="crudites" value="tomate"> tomate +0,50€</label>
-                <label><input type="checkbox" name="crudites" value="carotte"> carotte +0,50€</label>
-                <label><input type="checkbox" name="crudites" value="oeuf"> oeuf +0,50€</label>
-              </div>
+                <div class="form-row">
+                  <label>Crudités</label>
+                  <select name="crudites_choice" class="crudites-select">
+                    <option value="avec">Avec crudités</option>
+                    <option value="sans">Sans crudités</option>
+                  </select>
+                </div>
 
-              <label>
-                <input type="checkbox" name="extra_cheese">
-                fromage +0,50€
-              </label>
+                <div class="extras-box crudites-options">
+                  <p>Suppléments crudités</p>
 
-              <button>Ajouter</button>
-            </form>
+                  <label class="extra-pill">
+                    <input type="checkbox" name="crudites" value="salade">
+                    <span>Salade +0,50€</span>
+                  </label>
+
+                  <label class="extra-pill">
+                    <input type="checkbox" name="crudites" value="tomate">
+                    <span>Tomate +0,50€</span>
+                  </label>
+
+                  <label class="extra-pill">
+                    <input type="checkbox" name="crudites" value="carotte">
+                    <span>Carotte +0,50€</span>
+                  </label>
+
+                  <label class="extra-pill">
+                    <input type="checkbox" name="crudites" value="oeuf">
+                    <span>Œuf +0,50€</span>
+                  </label>
+                </div>
+
+                <label class="extra-pill cheese-pill">
+                  <input type="checkbox" name="extra_cheese">
+                  <span>Tranche de fromage +0,50€</span>
+                </label>
+
+                <button type="submit" class="btn btn-primary team-add-btn">
+                  Ajouter
+                </button>
+              </form>
+            <% } %>
           </div>
         </article>
       <% }) %>
     </div>
 
-    <script>
-      document.querySelectorAll('.team-form').forEach(form => {
-        const select = form.querySelector('.crudites-select');
-        const options = form.querySelector('.crudites-options');
+    <section class="page-intro" style="margin-top: 34px;">
+      <h2>🥤 Boissons seules</h2>
+      <p>Ajoutez uniquement une boisson à la commande d’équipe.</p>
+    </section>
 
-        function update() {
+    <div class="products-grid products-grid--small">
+      <% boissons.forEach(product => { %>
+        <article class="product-card product-card--pro">
+          <div class="product-image-wrap">
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
+          </div>
+
+          <div class="product-card__content">
+            <span class="product-category">boisson</span>
+            <h2><%= product.name %></h2>
+            <p class="product-description"><%= product.description || 'Boisson fraîche' %></p>
+            <p class="stock-ok">✔ Disponible</p>
+
+            <div class="product-bottom">
+              <p class="product-price">1,50 €</p>
+
+              <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+                <input type="hidden" name="mode" value="boisson">
+                <input type="hidden" name="participant_name" class="participant-name-hidden">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+
+    <section class="page-intro" style="margin-top: 34px;">
+      <h2>🍰 Desserts seuls</h2>
+      <p>Ajoutez uniquement un dessert à la commande d’équipe.</p>
+    </section>
+
+    <div class="products-grid products-grid--small">
+      <% desserts.forEach(product => { %>
+        <article class="product-card product-card--pro">
+          <div class="product-image-wrap">
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
+          </div>
+
+          <div class="product-card__content">
+            <span class="product-category">dessert</span>
+            <h2><%= product.name %></h2>
+            <p class="product-description"><%= product.description || 'Dessert du jour' %></p>
+            <p class="stock-ok">✔ Disponible</p>
+
+            <div class="product-bottom">
+              <p class="product-price">2,50 €</p>
+
+              <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+                <input type="hidden" name="mode" value="dessert">
+                <input type="hidden" name="participant_name" class="participant-name-hidden">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+
+    <section class="checkout-box" style="margin-top: 34px;">
+      <h2>Participants déjà ajoutés</h2>
+
+      <% if (!items.length) { %>
+        <p>Aucune commande ajoutée pour le moment.</p>
+      <% } else { %>
+        <% let total = 0; %>
+
+        <% items.forEach(item => { %>
+          <% const lineTotal = Number(item.unit_price) * Number(item.quantity); %>
+          <% total += lineTotal; %>
+
+          <div class="checkout-item">
+            <div>
+              <strong><%= item.participant_name %></strong><br>
+              <span><%= item.product_name %> x <%= item.quantity %></span>
+            </div>
+            <div>
+              <%= lineTotal.toFixed(2).replace('.', ',') %> €
+            </div>
+          </div>
+        <% }) %>
+
+        <hr>
+
+        <p class="checkout-total">
+          <strong>Total actuel : <%= total.toFixed(2).replace('.', ',') %> €</strong>
+        </p>
+
+        <div style="margin-top: 20px;">
+          <a href="/team-order/<%= teamOrder.id %>/summary" class="btn btn-primary">
+            Voir le total et payer
+          </a>
+        </div>
+      <% } %>
+    </section>
+  </main>
+
+  <script>
+    const participantInput = document.getElementById('participant_name');
+    const hiddenParticipantInputs = document.querySelectorAll('.participant-name-hidden');
+
+    function syncParticipantName() {
+      const value = participantInput.value.trim();
+
+      hiddenParticipantInputs.forEach(input => {
+        input.value = value;
+      });
+    }
+
+    participantInput.addEventListener('input', syncParticipantName);
+
+    document.querySelectorAll('.team-product-form, .team-inline-form').forEach(form => {
+      const select = form.querySelector('.crudites-select');
+      const options = form.querySelector('.crudites-options');
+
+      if (select && options) {
+        function updateCrudites() {
+          const inputs = options.querySelectorAll('input');
+
           if (select.value === 'sans') {
-            options.style.opacity = '0.4';
-            options.querySelectorAll('input').forEach(i => {
-              i.checked = false;
-              i.disabled = true;
+            options.classList.add('extras-disabled');
+
+            inputs.forEach(input => {
+              input.checked = false;
+              input.disabled = true;
             });
           } else {
-            options.style.opacity = '1';
-            options.querySelectorAll('input').forEach(i => {
-              i.disabled = false;
+            options.classList.remove('extras-disabled');
+
+            inputs.forEach(input => {
+              input.disabled = false;
             });
           }
         }
 
-        select.addEventListener('change', update);
-        update();
-      });
+        select.addEventListener('change', updateCrudites);
+        updateCrudites();
+      }
 
-      const nameInput = document.getElementById('participant_name');
-      document.querySelectorAll('.hidden-name').forEach(input => {
-        nameInput.addEventListener('input', () => {
-          input.value = nameInput.value;
-        });
-      });
-    </script>
+      form.addEventListener('submit', function (event) {
+        syncParticipantName();
 
-  </main>
+        if (!participantInput.value.trim()) {
+          event.preventDefault();
+          alert('Merci d’indiquer votre prénom ou votre nom avant d’ajouter un produit.');
+        }
+      });
+    });
+  </script>
 
   <%- include('partials/footer') %>
 </body>
