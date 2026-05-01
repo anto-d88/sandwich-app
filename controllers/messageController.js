@@ -1,4 +1,5 @@
 const messageService = require('../services/messageService');
+const notificationService = require('../services/notificationService');
 
 exports.getContactPage = (req, res) => {
   res.render('contact', {
@@ -30,15 +31,18 @@ exports.sendCustomerMessage = async (req, res) => {
       });
     }
 
-    await messageService.createMessage({
+    const savedMessage = await messageService.createMessage({
       message_type: message_type || 'general',
       customer_name,
       customer_email,
       customer_phone,
       company_name,
       subject,
-      message
+      message,
+      priority: message_type === 'reclamation' ? 'haute' : 'normal'
     });
+
+    notificationService.notifyNewMessage(savedMessage);
 
     res.render('contact', {
       title: 'Nous contacter',
@@ -88,7 +92,7 @@ exports.sendMeetingRequest = async (req, res) => {
       });
     }
 
-    await messageService.createMessage({
+    const savedMessage = await messageService.createMessage({
       message_type: 'meeting_request',
       customer_name,
       customer_email,
@@ -97,8 +101,11 @@ exports.sendMeetingRequest = async (req, res) => {
       subject: 'Demande livraison spéciale / réunion',
       preferred_date,
       preferred_time,
-      message
+      message,
+      priority: 'haute'
     });
+
+    notificationService.notifyNewMessage(savedMessage);
 
     res.render('meeting-request', {
       title: 'Demande spéciale entreprise',

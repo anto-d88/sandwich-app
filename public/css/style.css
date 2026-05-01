@@ -999,3 +999,21 @@ textarea {
   font-size: 1rem;
   font-family: Arial, sans-serif;
 }
+
+.message-card--urgent {
+  border: 2px solid #fb923c;
+  background: #fff7ed;
+}
+
+.message-content-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0;
+}
+
+.message-content-box p {
+  margin-bottom: 0;
+  line-height: 1.6;
+}

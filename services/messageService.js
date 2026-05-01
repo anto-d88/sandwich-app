@@ -15,6 +15,33 @@ async function createMessage(payload) {
   return data;
 }
 
+async function getAllMessages() {
+  const { data, error } = await supabase
+    .from('customer_messages')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function updateMessageStatus(id, status) {
+  const { data, error } = await supabase
+    .from('customer_messages')
+    .update({
+      status,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 module.exports = {
-  createMessage
+  createMessage,
+  getAllMessages,
+  updateMessageStatus
 };

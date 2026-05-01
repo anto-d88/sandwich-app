@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Admin</span>
+      <h1>Messages clients</h1>
+      <p>Suggestions, réclamations et demandes spéciales entreprise.</p>
+    </section>
+
+    <% if (!messages.length) { %>
+      <section class="empty-box">
+        <p>Aucun message pour le moment.</p>
+      </section>
+    <% } else { %>
+      <section class="admin-orders-grid">
+        <% messages.forEach(message => { %>
+          <article class="admin-order-card <%= message.message_type === 'meeting_request' ? 'message-card--urgent' : '' %>">
+            <div class="admin-order-top">
+              <div>
+                <span class="status-badge <%= message.message_type === 'meeting_request' ? 'status-nouvelle' : 'status-ouverte' %>">
+                  <%= message.message_type === 'meeting_request' ? 'Demande réunion' : message.message_type %>
+                </span>
+
+                <h2 style="margin-top:12px;">
+                  <%= message.subject || 'Message client' %>
+                </h2>
+              </div>
+
+              <span class="status-badge status-payee">
+                <%= message.status || 'nouveau' %>
+              </span>
+            </div>
+
+            <p><strong>Nom :</strong> <%= message.customer_name || '-' %></p>
+            <p><strong>Email :</strong> <%= message.customer_email || '-' %></p>
+            <p><strong>Téléphone :</strong> <%= message.customer_phone || '-' %></p>
+            <p><strong>Entreprise :</strong> <%= message.company_name || '-' %></p>
+
+            <% if (message.preferred_date || message.preferred_time) { %>
+              <p><strong>Date souhaitée :</strong> <%= message.preferred_date || '-' %></p>
+              <p><strong>Heure souhaitée :</strong> <%= message.preferred_time || '-' %></p>
+            <% } %>
+
+            <div class="message-content-box">
+              <strong>Message :</strong>
+              <p><%= message.message %></p>
+            </div>
+
+            <p style="color:#6b7280;">
+              Reçu le :
+              <%= message.created_at ? new Date(message.created_at).toLocaleString('fr-FR') : '-' %>
+            </p>
+
+            <form action="/admin/messages/<%= message.id %>/status" method="POST" class="checkout-form">
+              <select name="status">
+                <option value="nouveau" <%= message.status === 'nouveau' ? 'selected' : '' %>>Nouveau</option>
+                <option value="en_cours" <%= message.status === 'en_cours' ? 'selected' : '' %>>En cours</option>
+                <option value="traite" <%= message.status === 'traite' ? 'selected' : '' %>>Traité</option>
+              </select>
+
+              <button type="submit" class="btn btn-primary">
+                Mettre à jour
+              </button>
+            </form>
+          </article>
+        <% }) %>
+      </section>
+    <% } %>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>
