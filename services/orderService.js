@@ -1,32 +1,35 @@
-const supabase = require('../config/supabaseClient');
+const supabase = require("../config/supabaseClient");
 
 async function createOrderWithItems(orderPayload, cart) {
   const total = cart.reduce((sum, item) => {
-    return sum + Number(item.price) * Number(item.quantity);
+    return sum + Number(item.price || 0) * Number(item.quantity || 0);
   }, 0);
 
   const { data: order, error: orderError } = await supabase
-    .from('orders')
-    .insert([{
-      ...orderPayload,
-      total_price: total
-    }])
+    .from("orders")
+    .insert([
+      {
+        ...orderPayload,
+        total_amount: total,
+        status: orderPayload.status || "nouvelle",
+      },
+    ])
     .select()
     .single();
 
   if (orderError) throw orderError;
 
-  const orderItems = cart.map(item => ({
+  const orderItems = cart.map((item) => ({
     order_id: order.id,
     product_id: Number(item.id) || null,
     product_name: item.name,
-    unit_price: Number(item.price),
-    quantity: Number(item.quantity),
-    line_total: Number(item.price) * Number(item.quantity)
+    unit_price: Number(item.price || 0),
+    quantity: Number(item.quantity || 0),
+    line_total: Number(item.price || 0) * Number(item.quantity || 0),
   }));
 
   const { error: itemsError } = await supabase
-    .from('order_items')
+    .from("order_items")
     .insert(orderItems);
 
   if (itemsError) throw itemsError;
@@ -38,9 +41,9 @@ async function createOrderWithItems(orderPayload, cart) {
 
 async function getOrderByStripeSessionId(stripeSessionId) {
   const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('stripe_session_id', stripeSessionId)
+    .from("orders")
+    .select("*")
+    .eq("stripe_session_id", stripeSessionId)
     .maybeSingle();
 
   if (error) throw error;
@@ -49,9 +52,9 @@ async function getOrderByStripeSessionId(stripeSessionId) {
 
 async function countOrdersBySlot(deliverySlot) {
   const { count, error } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('delivery_slot', deliverySlot);
+    .from("orders")
+    .select("*", { count: "exact", head: true })
+    .eq("delivery_slot", deliverySlot);
 
   if (error) throw error;
   return count || 0;
@@ -59,9 +62,9 @@ async function countOrdersBySlot(deliverySlot) {
 
 async function decrementSingleProductStock(productId, quantity) {
   const { data: product, error: productError } = await supabase
-    .from('products')
-    .select('id, name, stock_quantity')
-    .eq('id', productId)
+    .from("products")
+    .select("id, name, stock_quantity")
+    .eq("id", productId)
     .single();
 
   if (productError) throw productError;
@@ -75,9 +78,9 @@ async function decrementSingleProductStock(productId, quantity) {
   }
 
   const { error: updateError } = await supabase
-    .from('products')
+    .from("products")
     .update({ stock_quantity: newStock })
-    .eq('id', productId);
+    .eq("id", productId);
 
   if (updateError) throw updateError;
 }
@@ -98,5 +101,5 @@ module.exports = {
   createOrderWithItems,
   getOrderByStripeSessionId,
   countOrdersBySlot,
-  decrementStockFromCart
+  decrementStockFromCart,
 };
