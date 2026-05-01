@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Contact</span>
+      <h1>Une remarque, une suggestion ou une réclamation ?</h1>
+      <p>
+        Votre retour m’aide à améliorer le service, les horaires, les produits et l’organisation des livraisons.
+      </p>
+    </section>
+
+    <% if (success) { %>
+      <section class="success-box">
+        <p><%= success %></p>
+      </section>
+    <% } %>
+
+    <% if (error) { %>
+      <section class="team-error-box">
+        <p><%= error %></p>
+      </section>
+    <% } %>
+
+    <section class="checkout-box">
+      <form action="/contact" method="POST" class="checkout-form">
+        <select name="message_type" required>
+          <option value="suggestion" <%= old.message_type === 'suggestion' ? 'selected' : '' %>>Suggestion d’amélioration</option>
+          <option value="reclamation" <%= old.message_type === 'reclamation' ? 'selected' : '' %>>Réclamation</option>
+          <option value="question" <%= old.message_type === 'question' ? 'selected' : '' %>>Question</option>
+          <option value="general" <%= old.message_type === 'general' ? 'selected' : '' %>>Autre message</option>
+        </select>
+
+        <input
+          type="text"
+          name="customer_name"
+          placeholder="Votre nom"
+          value="<%= old.customer_name || '' %>"
+        >
+
+        <input
+          type="email"
+          name="customer_email"
+          placeholder="Votre email"
+          value="<%= old.customer_email || '' %>"
+        >
+
+        <input
+          type="text"
+          name="customer_phone"
+          placeholder="Téléphone"
+          value="<%= old.customer_phone || '' %>"
+        >
+
+        <input
+          type="text"
+          name="company_name"
+          placeholder="Entreprise / call center"
+          value="<%= old.company_name || '' %>"
+        >
+
+        <input
+          type="text"
+          name="subject"
+          placeholder="Sujet"
+          value="<%= old.subject || '' %>"
+        >
+
+        <textarea
+          name="message"
+          placeholder="Votre message"
+          rows="6"
+          required
+        ><%= old.message || '' %></textarea>
+
+        <button type="submit" class="btn btn-primary">
+          Envoyer le message
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

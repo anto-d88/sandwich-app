@@ -14,6 +14,7 @@ const authRoutes = require('./routes/auth');
 const webhookRoutes = require('./routes/webhook');
 const teamOrderRoutes = require('./routes/teamOrder');
 const formuleRoutes = require('./routes/formule');
+const messageRoutes = require('./routes/messages');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,6 +63,7 @@ app.use('/admin', adminRoutes);
 app.use('/auth', authRoutes);
 app.use('/team-order', teamOrderRoutes);
 app.use('/formule', formuleRoutes);
+app.use('/', messageRoutes);
 
 // 404
 app.use((req, res) => {

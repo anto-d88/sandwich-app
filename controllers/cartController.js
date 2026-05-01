@@ -4,6 +4,7 @@ const orderService = require('../services/orderService');
 
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+const SHOP_OPEN = false;
 
 function getParisNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
@@ -205,8 +206,17 @@ exports.removeFromCart = (req, res) => {
 };
 
 exports.getCheckoutPage = async (req, res) => {
+   if(!SHOP_OPEN) {return res.render('checkout-closed',{
+      title:'commandes fermé'
+    })
+  }
+ 
   try {
+  
+
+
     const cart = req.session.cart || [];
+
 
     if (!cart.length) {
       return res.redirect('/cart');

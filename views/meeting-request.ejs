@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Entreprise</span>
+      <h1>Organiser une livraison pour une réunion</h1>
+      <p>
+        Besoin d’une livraison à une heure différente des créneaux proposés ?
+        Envoyez une demande spéciale pour une réunion, une formation ou un événement d’équipe.
+      </p>
+    </section>
+
+    <% if (success) { %>
+      <section class="success-box">
+        <p><%= success %></p>
+      </section>
+    <% } %>
+
+    <% if (error) { %>
+      <section class="team-error-box">
+        <p><%= error %></p>
+      </section>
+    <% } %>
+
+    <section class="checkout-layout">
+      <div class="checkout-box">
+        <h2>Demande spéciale</h2>
+
+        <form action="/demande-reunion" method="POST" class="checkout-form">
+          <input
+            type="text"
+            name="company_name"
+            placeholder="Nom de l’entreprise / établissement"
+            value="<%= old.company_name || '' %>"
+            required
+          >
+
+          <input
+            type="text"
+            name="customer_name"
+            placeholder="Nom du contact"
+            value="<%= old.customer_name || '' %>"
+          >
+
+          <input
+            type="text"
+            name="customer_phone"
+            placeholder="Téléphone"
+            value="<%= old.customer_phone || '' %>"
+            required
+          >
+
+          <input
+            type="email"
+            name="customer_email"
+            placeholder="Email"
+            value="<%= old.customer_email || '' %>"
+          >
+
+          <input
+            type="date"
+            name="preferred_date"
+            value="<%= old.preferred_date || '' %>"
+            required
+          >
+
+          <input
+            type="time"
+            name="preferred_time"
+            value="<%= old.preferred_time || '' %>"
+            required
+          >
+
+          <textarea
+            name="message"
+            placeholder="Expliquez votre besoin : nombre de personnes, heure souhaitée, type de commande, adresse, détails d’accès..."
+            rows="7"
+            required
+          ><%= old.message || '' %></textarea>
+
+          <button type="submit" class="btn btn-primary">
+            Envoyer la demande
+          </button>
+        </form>
+      </div>
+
+      <aside class="checkout-box">
+        <h2>Pour quels besoins ?</h2>
+        <ul class="proof-list">
+          <li>Réunion d’équipe</li>
+          <li>Formation interne</li>
+          <li>Pause déjeuner groupée</li>
+          <li>Événement call center</li>
+          <li>Livraison hors créneaux habituels</li>
+        </ul>
+
+        <p style="color:#16a34a; font-weight:700;">
+          Je vous recontacte pour confirmer si la livraison est possible.
+        </p>
+      </aside>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

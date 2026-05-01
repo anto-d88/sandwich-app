@@ -107,6 +107,9 @@ exports.getCheckoutPage = async (req, res) => {
 };
 
 exports.createCheckoutSession = async (req, res) => {
+  if (!SHOP_OPEN) {
+  return res.redirect('/checkout');
+}
   try {
     const cart = req.session.cart || [];
 
