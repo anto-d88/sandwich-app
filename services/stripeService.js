@@ -27,8 +27,8 @@ async function createCheckoutSession({ cart, customer }) {
       delivery_address: customer.delivery_address || '',
       delivery_slot: customer.delivery_slot || ''
     },
-    success_url: `${process.env.APP_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.APP_URL}/order/cancel`
+success_url: `${process.env.BASE_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+cancel_url: `${process.env.BASE_URL}/order/cancel`
   });
 
   return session;
@@ -56,8 +56,8 @@ async function createTeamOrderCheckoutSession({ teamOrder, items }) {
       delivery_address: teamOrder.delivery_address || '',
       delivery_slot: teamOrder.delivery_slot || ''
     },
-    success_url: `${process.env.APP_URL}/team-order/${teamOrder.id}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.APP_URL}/team-order/${teamOrder.id}/summary`
+success_url: `${process.env.BASE_URL}/team-order/${teamOrder.id}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+cancel_url: `${process.env.BASE_URL}/team-order/${teamOrder.id}/summary`
   });
 
   return session;

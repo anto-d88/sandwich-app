@@ -4,6 +4,7 @@ const stripeService = require('../services/stripeService');
 
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+const SHOP_OPEN= true;
 
 function getParisNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
@@ -178,6 +179,8 @@ exports.createCheckoutSession = async (req, res) => {
 
 exports.handlePaymentSuccess = async (req, res) => {
   try {
+          console.log("🔥 SUCCESS CALLBACK TRIGGERED");
+      console.log("SESSION ID:", req.query.session_id);
     const sessionId = req.query.session_id;
 
     if (!sessionId) {
@@ -200,6 +203,7 @@ exports.handlePaymentSuccess = async (req, res) => {
         title: 'Commande confirmée',
         order: existingOrder
       });
+
     }
 
     const cart = req.session.cart || [];
