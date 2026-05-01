@@ -1,10 +1,15 @@
 const supabase = require("../config/supabaseClient");
 
 async function createOrderWithItems(orderPayload, cart) {
+  // 🔥 1. Vérification du stock AVANT commande
+  await checkStockBeforeOrder(cart);
+
+  // 🔥 2. Calcul du total
   const total = cart.reduce((sum, item) => {
     return sum + Number(item.price || 0) * Number(item.quantity || 0);
   }, 0);
 
+  // 🔥 3. Création commande
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert([
@@ -19,6 +24,7 @@ async function createOrderWithItems(orderPayload, cart) {
 
   if (orderError) throw orderError;
 
+  // 🔥 4. Création order_items
   const orderItems = cart.map((item) => ({
     order_id: order.id,
     product_id: Number(item.id) || null,
@@ -34,6 +40,7 @@ async function createOrderWithItems(orderPayload, cart) {
 
   if (itemsError) throw itemsError;
 
+  // 🔥 5. Décrémentation stock
   await decrementStockFromCart(cart);
 
   return order;
@@ -60,6 +67,43 @@ async function countOrdersBySlot(deliverySlot) {
   return count || 0;
 }
 
+// 🔥 Vérification du stock AVANT commande
+async function checkStockBeforeOrder(cart) {
+  for (const item of cart) {
+    if (item.is_formula && item.formula_items) {
+      for (const subItem of item.formula_items) {
+        await checkSingleProductStock(subItem.id, item.quantity);
+      }
+    } else {
+      await checkSingleProductStock(item.id, item.quantity);
+    }
+  }
+}
+
+async function checkSingleProductStock(productId, quantity) {
+  const { data: product, error } = await supabase
+    .from("products")
+    .select("id, name, stock_quantity")
+    .eq("id", productId)
+    .single();
+
+  if (error) throw error;
+
+  const stock = Number(product.stock_quantity || 0);
+  const requested = Number(quantity || 0);
+
+  if (stock <= 0) {
+    throw new Error(`${product.name} est en rupture de stock`);
+  }
+
+  if (requested > stock) {
+    throw new Error(
+      `Stock insuffisant pour ${product.name} (disponible: ${stock})`
+    );
+  }
+}
+
+// 🔥 Décrémentation stock
 async function decrementSingleProductStock(productId, quantity) {
   const { data: product, error: productError } = await supabase
     .from("products")
