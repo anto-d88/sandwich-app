@@ -7,7 +7,11 @@ async function createMessage(payload) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('ERREUR SUPABASE MESSAGE:', error);
+    throw error;
+  }
+
   return data;
 }
 
