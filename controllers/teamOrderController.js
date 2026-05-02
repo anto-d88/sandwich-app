@@ -285,6 +285,45 @@ exports.addTeamFormule = async (req, res) => {
       return res.status(400).send('Formule incomplète');
     }
 
+    let finalPrice = FORMULE_PRICE;
+    const options = [];
+
+    const isJambon = (sandwich.name || '').toLowerCase().includes('jambon');
+    const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
+    const cruditesChoice = req.body.crudites_choice || 'avec';
+    const rawCrudites = req.body.crudites;
+    const extraCheese = req.body.extra_cheese === 'on';
+
+    let cruditesList = [];
+
+    if (Array.isArray(rawCrudites)) {
+      cruditesList = rawCrudites;
+    } else if (typeof rawCrudites === 'string') {
+      cruditesList = [rawCrudites];
+    }
+
+    if (sauceChoice) {
+      options.push(sauceChoice);
+    }
+
+    if (cruditesChoice === 'sans') {
+      options.push('sans crudités');
+    } else {
+      options.push('avec crudités');
+
+      if (cruditesList.length > 0) {
+        finalPrice += cruditesList.length * 0.50;
+        options.push(`suppléments: ${cruditesList.join(', ')}`);
+      }
+    }
+
+    if (extraCheese) {
+      finalPrice += 0.50;
+      options.push('tranche de fromage');
+    }
+
+    const sandwichNameWithOptions = `${sandwich.name} (${options.join(', ')})`;
+
     await teamOrderService.addParticipantItem({
       team_order_id: teamOrderId,
       participant_name: participantName.trim(),
@@ -292,8 +331,8 @@ exports.addTeamFormule = async (req, res) => {
       boisson_id: boisson.id,
       dessert_id: dessert.id,
       item_type: 'formule',
-      product_name: `Formule : ${sandwich.name} + ${boisson.name} + ${dessert.name}`,
-      unit_price: FORMULE_PRICE,
+      product_name: `Formule : ${sandwichNameWithOptions} + ${boisson.name} + ${dessert.name}`,
+      unit_price: finalPrice,
       quantity: 1
     });
 

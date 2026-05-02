@@ -9,20 +9,35 @@
   <main class="container">
     <section class="page-intro">
       <span class="section-badge">Formule complète</span>
-      <h1>Composez votre formule</h1>
-      <p>1 sandwich + 1 boisson + 1 dessert pour <strong>7,50€</strong>. Vous économisez 1€.</p>
+      <h1>Composer ma formule</h1>
+      <p>
+        1 sandwich + 1 boisson + 1 dessert pour <strong>7,50€</strong>.
+        Les crudités sont incluses, les suppléments sont à +0,50€ chacun.
+      </p>
     </section>
 
     <form action="/formule/add" method="POST" class="formula-layout">
       <section class="formula-column">
-        <h2>🥪 Sandwich</h2>
+        <h2>🥪 Choisissez votre sandwich</h2>
 
         <div class="products-grid products-grid--small">
           <% sandwiches.forEach(product => { %>
             <label class="formula-card">
-              <input type="radio" name="sandwich_id" value="<%= product.id %>" required>
+              <input
+                type="radio"
+                name="sandwich_id"
+                value="<%= product.id %>"
+                required
+                data-is-jambon="<%= (product.name || '').toLowerCase().includes('jambon') ? 'yes' : 'no' %>"
+              >
+
               <div class="formula-card__body">
-                <img src="<%= product.image_url || '/images/default-product.jpg' %>" class="formula-card__image">
+                <img
+                  src="<%= product.image_url || '/images/default-product.jpg' %>"
+                  alt="<%= product.name %>"
+                  class="formula-card__image"
+                >
+
                 <div class="formula-card__content">
                   <span class="product-category">sandwich</span>
                   <h3><%= product.name %></h3>
@@ -33,19 +48,79 @@
             </label>
           <% }) %>
         </div>
+
+        <div class="checkout-box formula-options-box">
+          <h2>Options du sandwich</h2>
+
+          <div class="form-row formula-sauce-row">
+            <label>Base</label>
+            <select name="sauce_choice">
+              <option value="beurre">Beurre</option>
+              <option value="mayonnaise">Mayonnaise</option>
+            </select>
+            <p style="color:#6b7280; margin:6px 0 0;">
+              Le choix beurre / mayonnaise s’applique uniquement aux sandwichs jambon.
+            </p>
+          </div>
+
+          <div class="form-row">
+            <label>Crudités</label>
+            <select name="crudites_choice" class="crudites-select">
+              <option value="avec">Avec crudités</option>
+              <option value="sans">Sans crudités</option>
+            </select>
+          </div>
+
+          <div class="extras-box crudites-options">
+            <p>Suppléments crudités</p>
+
+            <label class="extra-pill">
+              <input type="checkbox" name="crudites" value="salade">
+              <span>Salade +0,50€</span>
+            </label>
+
+            <label class="extra-pill">
+              <input type="checkbox" name="crudites" value="tomate">
+              <span>Tomate +0,50€</span>
+            </label>
+
+            <label class="extra-pill">
+              <input type="checkbox" name="crudites" value="carotte">
+              <span>Carotte +0,50€</span>
+            </label>
+
+            <label class="extra-pill">
+              <input type="checkbox" name="crudites" value="oeuf">
+              <span>Œuf +0,50€</span>
+            </label>
+          </div>
+
+          <label class="extra-pill cheese-pill">
+            <input type="checkbox" name="extra_cheese">
+            <span>Tranche de fromage +0,50€</span>
+          </label>
+        </div>
       </section>
 
       <section class="formula-column">
-        <h2>🥤 Boisson</h2>
+        <h2>🥤 Choisissez votre boisson</h2>
 
         <div class="products-grid products-grid--small">
           <% boissons.forEach(product => { %>
             <label class="formula-card">
               <input type="radio" name="boisson_id" value="<%= product.id %>" required>
+
               <div class="formula-card__body">
+                <img
+                  src="<%= product.image_url || '/images/default-product.jpg' %>"
+                  alt="<%= product.name %>"
+                  class="formula-card__image"
+                >
+
                 <div class="formula-card__content">
                   <span class="product-category">boisson</span>
                   <h3><%= product.name %></h3>
+                  <p><%= product.description || 'Boisson fraîche' %></p>
                   <strong>1,50 €</strong>
                 </div>
               </div>
@@ -53,16 +128,24 @@
           <% }) %>
         </div>
 
-        <h2 style="margin-top:24px;">🍰 Dessert</h2>
+        <h2 style="margin-top:24px;">🍰 Choisissez votre dessert</h2>
 
         <div class="products-grid products-grid--small">
           <% desserts.forEach(product => { %>
             <label class="formula-card">
               <input type="radio" name="dessert_id" value="<%= product.id %>" required>
+
               <div class="formula-card__body">
+                <img
+                  src="<%= product.image_url || '/images/default-product.jpg' %>"
+                  alt="<%= product.name %>"
+                  class="formula-card__image"
+                >
+
                 <div class="formula-card__content">
                   <span class="product-category">dessert</span>
                   <h3><%= product.name %></h3>
+                  <p><%= product.description || 'Dessert du jour' %></p>
                   <strong>2,50 €</strong>
                 </div>
               </div>
@@ -73,16 +156,72 @@
 
       <aside class="formula-summary">
         <div class="checkout-box">
-          <h2>Votre formule</h2>
+          <h2>Résumé</h2>
           <p>Total séparé : <strong>8,50 €</strong></p>
           <p>Prix formule : <strong>7,50 €</strong></p>
           <p style="color:#15803d;font-weight:700;">Économie : 1,00 €</p>
+          <p style="color:#6b7280;">
+            Les suppléments choisis seront ajoutés au prix de la formule.
+          </p>
 
-          <button type="submit" class="btn btn-primary">Ajouter la formule</button>
+          <button type="submit" class="btn btn-primary">
+            Ajouter la formule
+          </button>
         </div>
       </aside>
     </form>
   </main>
+
+  <script>
+    const cruditesSelect = document.querySelector('.crudites-select');
+    const cruditesOptions = document.querySelector('.crudites-options');
+    const sauceRow = document.querySelector('.formula-sauce-row');
+    const sandwichRadios = document.querySelectorAll('input[name="sandwich_id"]');
+
+    function updateCrudites() {
+      if (!cruditesSelect || !cruditesOptions) return;
+
+      const inputs = cruditesOptions.querySelectorAll('input');
+
+      if (cruditesSelect.value === 'sans') {
+        cruditesOptions.classList.add('extras-disabled');
+
+        inputs.forEach(input => {
+          input.checked = false;
+          input.disabled = true;
+        });
+      } else {
+        cruditesOptions.classList.remove('extras-disabled');
+
+        inputs.forEach(input => {
+          input.disabled = false;
+        });
+      }
+    }
+
+    function updateSauceVisibility() {
+      const selectedSandwich = document.querySelector('input[name="sandwich_id"]:checked');
+
+      if (!selectedSandwich || !sauceRow) return;
+
+      if (selectedSandwich.dataset.isJambon === 'yes') {
+        sauceRow.style.display = 'grid';
+      } else {
+        sauceRow.style.display = 'none';
+      }
+    }
+
+    if (cruditesSelect) {
+      cruditesSelect.addEventListener('change', updateCrudites);
+      updateCrudites();
+    }
+
+    sandwichRadios.forEach(radio => {
+      radio.addEventListener('change', updateSauceVisibility);
+    });
+
+    updateSauceVisibility();
+  </script>
 
   <%- include('partials/footer') %>
 </body>

@@ -1017,3 +1017,53 @@ textarea {
   margin-bottom: 0;
   line-height: 1.6;
 }
+
+.formula-options-box {
+  margin-top: 20px;
+}
+
+.extras-box {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.extras-box p {
+  margin: 0 0 4px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.extra-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.extra-pill input {
+  width: auto;
+  min-width: auto;
+  padding: 0;
+}
+
+.cheese-pill {
+  border-color: #fdba74;
+  background: #fff7ed;
+  margin-top: 10px;
+}
+
+.extras-disabled {
+  opacity: 0.45;
+  background: #f3f4f6;
+}
