@@ -2,6 +2,53 @@ const productService = require('../services/productService');
 
 const FORMULE_PRICE = 7.50;
 
+function normalizeArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') return [value];
+  return [];
+}
+
+function buildSandwichOptions(sandwich, body) {
+  let finalPrice = FORMULE_PRICE;
+  const options = [];
+
+  const isJambon = (sandwich.name || '').toLowerCase().includes('jambon');
+  const sauceChoice = isJambon ? (body.sauce_choice || 'beurre') : null;
+  const cruditesChoice = body.crudites_choice || 'avec';
+  const cruditesList = normalizeArray(body.crudites);
+  const extraEgg = body.extra_egg === 'on';
+  const extraCheese = body.extra_cheese === 'on';
+
+  if (sauceChoice) {
+    options.push(sauceChoice);
+  }
+
+  if (cruditesChoice === 'sans') {
+    options.push('sans crudités');
+  } else {
+    if (cruditesList.length > 0) {
+      options.push(`crudités: ${cruditesList.join(', ')}`);
+    } else {
+      options.push('avec crudités');
+    }
+  }
+
+  if (extraEgg) {
+    finalPrice += 0.50;
+    options.push('œuf');
+  }
+
+  if (extraCheese) {
+    finalPrice += 0.50;
+    options.push('tranche de fromage');
+  }
+
+  return {
+    finalPrice,
+    sandwichNameWithOptions: `${sandwich.name} (${options.join(', ')})`
+  };
+}
+
 exports.getFormulePage = async (req, res) => {
   try {
     const products = await productService.getAllAvailableProducts();
@@ -31,51 +78,16 @@ exports.addFormuleToCart = async (req, res) => {
       return res.status(400).send('Formule incomplète');
     }
 
-    let finalPrice = FORMULE_PRICE;
-    const options = [];
+    const sandwichOptions = buildSandwichOptions(sandwich, req.body);
 
-    const isJambon = (sandwich.name || '').toLowerCase().includes('jambon');
-    const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
-    const cruditesChoice = req.body.crudites_choice || 'avec';
-    const rawCrudites = req.body.crudites;
-    const extraCheese = req.body.extra_cheese === 'on';
-
-    let cruditesList = [];
-
-    if (Array.isArray(rawCrudites)) {
-      cruditesList = rawCrudites;
-    } else if (typeof rawCrudites === 'string') {
-      cruditesList = [rawCrudites];
-    }
-
-    if (sauceChoice) {
-      options.push(sauceChoice);
-    }
-
-    if (cruditesChoice === 'sans') {
-      options.push('sans crudités');
-    } else {
-      options.push('avec crudités');
-
-      if (cruditesList.length > 0) {
-        finalPrice += cruditesList.length * 0.50;
-        options.push(`suppléments: ${cruditesList.join(', ')}`);
-      }
-    }
-
-    if (extraCheese) {
-      finalPrice += 0.50;
-      options.push('tranche de fromage');
-    }
-
-    const sandwichNameWithOptions = `${sandwich.name} (${options.join(', ')})`;
-
-    const formulaName = `Formule : ${sandwichNameWithOptions} + ${boisson.name} + ${dessert.name}`;
+    const formulaName = `Formule : ${sandwichOptions.sandwichNameWithOptions} + ${boisson.name} + ${dessert.name}`;
 
     const cart = req.session.cart || [];
 
     const existingItem = cart.find(item => {
-      return item.is_formula === true && item.name === formulaName && Number(item.price) === Number(finalPrice);
+      return item.is_formula === true &&
+        item.name === formulaName &&
+        Number(item.price) === Number(sandwichOptions.finalPrice);
     });
 
     if (existingItem) {
@@ -84,7 +96,7 @@ exports.addFormuleToCart = async (req, res) => {
       cart.push({
         id: `formule-${sandwich.id}-${boisson.id}-${dessert.id}-${Date.now()}`,
         name: formulaName,
-        price: finalPrice,
+        price: sandwichOptions.finalPrice,
         quantity: 1,
         is_formula: true,
         formula_items: [

@@ -82,6 +82,54 @@ async function getSlotsWithAvailability() {
   return slotsWithAvailability;
 }
 
+function normalizeArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') return [value];
+  return [];
+}
+
+function buildSandwichOptions(product, body, basePrice) {
+  let finalPrice = Number(basePrice);
+  const options = [];
+
+  const isJambon = (product.name || '').toLowerCase().includes('jambon');
+  const sauceChoice = isJambon ? (body.sauce_choice || 'beurre') : null;
+  const cruditesChoice = body.crudites_choice || 'avec';
+  const cruditesList = normalizeArray(body.crudites);
+  const extraEgg = body.extra_egg === 'on';
+  const extraCheese = body.extra_cheese === 'on';
+
+  if (sauceChoice) {
+    options.push(sauceChoice);
+  }
+
+  if (cruditesChoice === 'sans') {
+    options.push('sans crudités');
+  } else {
+    if (cruditesList.length > 0) {
+      options.push(`crudités: ${cruditesList.join(', ')}`);
+    } else {
+      options.push('avec crudités');
+    }
+  }
+
+  if (extraEgg) {
+    finalPrice += 0.50;
+    options.push('œuf');
+  }
+
+  if (extraCheese) {
+    finalPrice += 0.50;
+    options.push('tranche de fromage');
+  }
+
+  return {
+    finalPrice,
+    optionsText: options.join(', '),
+    productNameWithOptions: `${product.name} (${options.join(', ')})`
+  };
+}
+
 exports.getCreatePage = async (req, res) => {
   try {
     const slotsWithAvailability = await getSlotsWithAvailability();
@@ -192,43 +240,9 @@ exports.addParticipantToTeamOrder = async (req, res) => {
       let finalName = product.name;
 
       if (mode === 'sandwich') {
-        const isJambon = (product.name || '').toLowerCase().includes('jambon');
-        const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
-        const cruditesChoice = req.body.crudites_choice || 'avec';
-        const rawCrudites = req.body.crudites;
-        const extraCheese = req.body.extra_cheese === 'on';
-
-        let cruditesList = [];
-
-        if (Array.isArray(rawCrudites)) {
-          cruditesList = rawCrudites;
-        } else if (typeof rawCrudites === 'string') {
-          cruditesList = [rawCrudites];
-        }
-
-        const options = [];
-
-        if (sauceChoice) {
-          options.push(sauceChoice);
-        }
-
-        if (cruditesChoice === 'sans') {
-          options.push('sans crudités');
-        } else {
-          options.push('avec crudités');
-
-          if (cruditesList.length > 0) {
-            finalPrice += cruditesList.length * 0.50;
-            options.push(`suppléments: ${cruditesList.join(', ')}`);
-          }
-        }
-
-        if (extraCheese) {
-          finalPrice += 0.50;
-          options.push('tranche de fromage');
-        }
-
-        finalName = `${product.name} (${options.join(', ')})`;
+        const sandwichOptions = buildSandwichOptions(product, req.body, product.price);
+        finalPrice = sandwichOptions.finalPrice;
+        finalName = sandwichOptions.productNameWithOptions;
       }
 
       await teamOrderService.addParticipantItem({
@@ -285,44 +299,7 @@ exports.addTeamFormule = async (req, res) => {
       return res.status(400).send('Formule incomplète');
     }
 
-    let finalPrice = FORMULE_PRICE;
-    const options = [];
-
-    const isJambon = (sandwich.name || '').toLowerCase().includes('jambon');
-    const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
-    const cruditesChoice = req.body.crudites_choice || 'avec';
-    const rawCrudites = req.body.crudites;
-    const extraCheese = req.body.extra_cheese === 'on';
-
-    let cruditesList = [];
-
-    if (Array.isArray(rawCrudites)) {
-      cruditesList = rawCrudites;
-    } else if (typeof rawCrudites === 'string') {
-      cruditesList = [rawCrudites];
-    }
-
-    if (sauceChoice) {
-      options.push(sauceChoice);
-    }
-
-    if (cruditesChoice === 'sans') {
-      options.push('sans crudités');
-    } else {
-      options.push('avec crudités');
-
-      if (cruditesList.length > 0) {
-        finalPrice += cruditesList.length * 0.50;
-        options.push(`suppléments: ${cruditesList.join(', ')}`);
-      }
-    }
-
-    if (extraCheese) {
-      finalPrice += 0.50;
-      options.push('tranche de fromage');
-    }
-
-    const sandwichNameWithOptions = `${sandwich.name} (${options.join(', ')})`;
+    const sandwichOptions = buildSandwichOptions(sandwich, req.body, FORMULE_PRICE);
 
     await teamOrderService.addParticipantItem({
       team_order_id: teamOrderId,
@@ -331,15 +308,15 @@ exports.addTeamFormule = async (req, res) => {
       boisson_id: boisson.id,
       dessert_id: dessert.id,
       item_type: 'formule',
-      product_name: `Formule : ${sandwichNameWithOptions} + ${boisson.name} + ${dessert.name}`,
-      unit_price: finalPrice,
+      product_name: `Formule : ${sandwichOptions.productNameWithOptions} + ${boisson.name} + ${dessert.name}`,
+      unit_price: sandwichOptions.finalPrice,
       quantity: 1
     });
 
-    res.redirect(`/team-order/${teamOrderId}`);
+    return res.redirect(`/team-order/${teamOrderId}`);
   } catch (error) {
     console.error('Erreur addTeamFormule:', error);
-    res.status(500).send('Erreur ajout formule équipe');
+    return res.status(500).send('Erreur ajout formule équipe');
   }
 };
 

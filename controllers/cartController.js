@@ -2,9 +2,10 @@ const supabase = require('../config/supabaseClient');
 const getCartTotal = require('../utils/getCartTotal');
 const orderService = require('../services/orderService');
 
+const SHOP_OPEN = true;
+
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
-const SHOP_OPEN = true;
 
 function getParisNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
@@ -82,6 +83,53 @@ async function getSlotsWithAvailability() {
   return slots;
 }
 
+function normalizeArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') return [value];
+  return [];
+}
+
+function buildSandwichOptions(product, body) {
+  let finalPrice = Number(product.price);
+  const options = [];
+
+  const isJambon = (product.name || '').toLowerCase().includes('jambon');
+  const sauceChoice = isJambon ? (body.sauce_choice || 'beurre') : null;
+  const cruditesChoice = body.crudites_choice || 'avec';
+  const cruditesList = normalizeArray(body.crudites);
+  const extraEgg = body.extra_egg === 'on';
+  const extraCheese = body.extra_cheese === 'on';
+
+  if (sauceChoice) {
+    options.push(sauceChoice);
+  }
+
+  if (cruditesChoice === 'sans') {
+    options.push('sans crudités');
+  } else {
+    if (cruditesList.length > 0) {
+      options.push(`crudités: ${cruditesList.join(', ')}`);
+    } else {
+      options.push('avec crudités');
+    }
+  }
+
+  if (extraEgg) {
+    finalPrice += 0.50;
+    options.push('œuf');
+  }
+
+  if (extraCheese) {
+    finalPrice += 0.50;
+    options.push('tranche de fromage');
+  }
+
+  return {
+    finalPrice,
+    finalName: `${product.name} (${options.join(', ')})`
+  };
+}
+
 exports.getCartPage = (req, res) => {
   const cart = req.session.cart || [];
   const total = getCartTotal(cart);
@@ -122,44 +170,11 @@ exports.addToCart = async (req, res) => {
 
     let finalPrice = Number(product.price);
     let finalName = product.name;
-    const options = [];
 
     if (product.category === 'sandwich') {
-      const isJambon = (product.name || '').toLowerCase().includes('jambon');
-      const sauceChoice = isJambon ? (req.body.sauce_choice || 'beurre') : null;
-      const cruditesChoice = req.body.crudites_choice || 'avec';
-      const rawCrudites = req.body.crudites;
-      const extraCheese = req.body.extra_cheese === 'on';
-
-      let cruditesList = [];
-
-      if (Array.isArray(rawCrudites)) {
-        cruditesList = rawCrudites;
-      } else if (typeof rawCrudites === 'string') {
-        cruditesList = [rawCrudites];
-      }
-
-      if (sauceChoice) {
-        options.push(sauceChoice);
-      }
-
-      if (cruditesChoice === 'sans') {
-        options.push('sans crudités');
-      } else {
-        options.push('avec crudités');
-
-        if (cruditesList.length > 0) {
-          finalPrice += cruditesList.length * 0.50;
-          options.push(`suppléments: ${cruditesList.join(', ')}`);
-        }
-      }
-
-      if (extraCheese) {
-        finalPrice += 0.50;
-        options.push('tranche de fromage');
-      }
-
-      finalName = `${product.name} (${options.join(', ')})`;
+      const sandwichOptions = buildSandwichOptions(product, req.body);
+      finalPrice = sandwichOptions.finalPrice;
+      finalName = sandwichOptions.finalName;
     }
 
     const existingItem = cart.find(item => {
@@ -206,17 +221,14 @@ exports.removeFromCart = (req, res) => {
 };
 
 exports.getCheckoutPage = async (req, res) => {
-   if(!SHOP_OPEN) {return res.render('checkout-closed',{
-      title:'commandes fermé'
-    })
+  if (!SHOP_OPEN) {
+    return res.render('checkout-closed', {
+      title: 'Commandes fermées'
+    });
   }
- 
+
   try {
-  
-
-
     const cart = req.session.cart || [];
-
 
     if (!cart.length) {
       return res.redirect('/cart');

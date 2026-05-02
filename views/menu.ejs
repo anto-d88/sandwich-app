@@ -10,10 +10,7 @@
     <section class="page-intro">
       <span class="section-badge">Commande rapide</span>
       <h1>Notre carte</h1>
-      <p>
-        Sandwichs froids, boissons et desserts pour une pause déjeuner simple,
-        rapide et livrée sur créneau fixe.
-      </p>
+      <p>Sandwichs froids, boissons et desserts pour une pause simple, rapide et livrée sur créneau fixe.</p>
     </section>
 
     <section class="menu-top-banner">
@@ -28,20 +25,14 @@
 
     <section class="page-intro" style="margin-top: 10px;">
       <h2>🥪 Sandwichs</h2>
-      <p>
-        Crudités comprises : salade, tomate, carotte. Vous pouvez choisir avec ou sans crudités.
-      </p>
+      <p>Crudités gratuites au choix : salade, tomate, carotte. Œuf et fromage en supplément.</p>
     </section>
 
     <section class="products-grid">
       <% products.filter(product => product.category === 'sandwich').forEach(product => { %>
         <article class="product-card product-card--pro">
           <a href="/product/<%= product.id %>" class="product-image-wrap">
-            <img
-              src="<%= product.image_url || '/images/default-product.jpg' %>"
-              alt="<%= product.name %>"
-              class="product-image"
-            >
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
           </a>
 
           <div class="product-card__content">
@@ -52,18 +43,11 @@
             <% if (product.stock_quantity <= 0) { %>
               <span class="product-badge product-badge--danger">Rupture</span>
               <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-            <% } else if (product.stock_quantity <= 3) { %>
-              <span class="product-badge">🔥 Très demandé</span>
-              <p class="stock-warning stock-warning--danger">⚠️ Plus que quelques sandwichs disponibles</p>
-            <% } else if (product.stock_quantity <= 6) { %>
-              <p class="stock-warning">⏳ Stock limité aujourd’hui</p>
             <% } else { %>
               <p class="stock-ok">✔ Disponible</p>
             <% } %>
 
-            <div class="product-bottom">
-              <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
-            </div>
+            <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
             <% if (product.stock_quantity <= 0) { %>
               <button class="btn btn-danger" disabled>Rupture de stock</button>
@@ -73,14 +57,7 @@
 
                 <label>
                   Quantité
-                  <input
-                    type="number"
-                    name="quantity"
-                    value="1"
-                    min="1"
-                    max="<%= product.stock_quantity %>"
-                    class="qty-input"
-                  >
+                  <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
                 </label>
 
                 <% if ((product.name || '').toLowerCase().includes('jambon')) { %>
@@ -101,34 +78,38 @@
                   </select>
                 </label>
 
-                <div class="crudites-options">
-                  <p style="margin: 6px 0; font-weight: 700;">Suppléments crudités +0,50€:</p>
+                <div class="extras-box crudites-options">
+                  <p>Crudités gratuites au choix</p>
 
-                  <label class="option-check">
-                    <input type="checkbox" name="crudites" value="salade">
-                    Salade
+                  <label class="extra-pill">
+                    <input type="checkbox" name="crudites" value="salade" checked>
+                    <span>Salade</span>
                   </label>
 
-                  <label class="option-check">
-                    <input type="checkbox" name="crudites" value="tomate">
-                    Tomate
+                  <label class="extra-pill">
+                    <input type="checkbox" name="crudites" value="tomate" checked>
+                    <span>Tomate</span>
                   </label>
 
-                  <label class="option-check">
-                    <input type="checkbox" name="crudites" value="carotte">
-                    Carotte
-                  </label>
-
-                  <label class="option-check">
-                    <input type="checkbox" name="crudites" value="oeuf">
-                    Œuf 
+                  <label class="extra-pill">
+                    <input type="checkbox" name="crudites" value="carotte" checked>
+                    <span>Carotte</span>
                   </label>
                 </div>
 
-                <label class="option-check">
-                  <input type="checkbox" name="extra_cheese">
-                  Tranche de fromage +0,50€
-                </label>
+                <div class="extras-box paid-options-box">
+                  <p>Suppléments</p>
+
+                  <label class="extra-pill">
+                    <input type="checkbox" name="extra_egg">
+                    <span>Œuf +0,50€</span>
+                  </label>
+
+                  <label class="extra-pill cheese-pill">
+                    <input type="checkbox" name="extra_cheese">
+                    <span>Tranche de fromage +0,50€</span>
+                  </label>
+                </div>
 
                 <button type="submit" class="btn btn-primary">Ajouter</button>
               </form>
@@ -149,45 +130,23 @@
       <% products.filter(product => product.category === 'boisson').forEach(product => { %>
         <article class="product-card product-card--pro">
           <div class="product-image-wrap">
-            <img
-              src="<%= product.image_url || '/images/default-product.jpg' %>"
-              alt="<%= product.name %>"
-              class="product-image"
-            >
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
           </div>
 
           <div class="product-card__content">
             <span class="product-category">boisson</span>
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || 'Boisson fraîche' %></p>
-
-            <% if (product.stock_quantity <= 0) { %>
-              <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-            <% } else if (product.stock_quantity <= 3) { %>
-              <p class="stock-warning stock-warning--danger">⚠️ Stock faible</p>
-            <% } else { %>
-              <p class="stock-ok">✔ Disponible</p>
-            <% } %>
+            <p class="stock-ok">✔ Disponible</p>
 
             <div class="product-bottom">
               <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
-              <% if (product.stock_quantity <= 0) { %>
-                <button class="btn btn-danger" disabled>Rupture</button>
-              <% } else { %>
-                <form action="/cart/add" method="POST" class="product-form-inline">
-                  <input type="hidden" name="id" value="<%= product.id %>">
-                  <input
-                    type="number"
-                    name="quantity"
-                    value="1"
-                    min="1"
-                    max="<%= product.stock_quantity %>"
-                    class="qty-input"
-                  >
-                  <button type="submit" class="btn btn-primary">Ajouter</button>
-                </form>
-              <% } %>
+              <form action="/cart/add" method="POST" class="product-form-inline">
+                <input type="hidden" name="id" value="<%= product.id %>">
+                <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
             </div>
           </div>
         </article>
@@ -203,45 +162,23 @@
       <% products.filter(product => product.category === 'dessert').forEach(product => { %>
         <article class="product-card product-card--pro">
           <div class="product-image-wrap">
-            <img
-              src="<%= product.image_url || '/images/default-product.jpg' %>"
-              alt="<%= product.name %>"
-              class="product-image"
-            >
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
           </div>
 
           <div class="product-card__content">
             <span class="product-category">dessert</span>
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || 'Dessert du jour' %></p>
-
-            <% if (product.stock_quantity <= 0) { %>
-              <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-            <% } else if (product.stock_quantity <= 3) { %>
-              <p class="stock-warning stock-warning--danger">⚠️ Stock faible</p>
-            <% } else { %>
-              <p class="stock-ok">✔ Disponible</p>
-            <% } %>
+            <p class="stock-ok">✔ Disponible</p>
 
             <div class="product-bottom">
               <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
-              <% if (product.stock_quantity <= 0) { %>
-                <button class="btn btn-danger" disabled>Rupture</button>
-              <% } else { %>
-                <form action="/cart/add" method="POST" class="product-form-inline">
-                  <input type="hidden" name="id" value="<%= product.id %>">
-                  <input
-                    type="number"
-                    name="quantity"
-                    value="1"
-                    min="1"
-                    max="<%= product.stock_quantity %>"
-                    class="qty-input"
-                  >
-                  <button type="submit" class="btn btn-primary">Ajouter</button>
-                </form>
-              <% } %>
+              <form action="/cart/add" method="POST" class="product-form-inline">
+                <input type="hidden" name="id" value="<%= product.id %>">
+                <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+              </form>
             </div>
           </div>
         </article>
@@ -260,15 +197,16 @@
         const inputs = options.querySelectorAll('input');
 
         if (select.value === 'sans') {
-          options.style.opacity = '0.45';
+          options.classList.add('extras-disabled');
           inputs.forEach(input => {
             input.checked = false;
             input.disabled = true;
           });
         } else {
-          options.style.opacity = '1';
+          options.classList.remove('extras-disabled');
           inputs.forEach(input => {
             input.disabled = false;
+            if (!input.checked) input.checked = true;
           });
         }
       }
