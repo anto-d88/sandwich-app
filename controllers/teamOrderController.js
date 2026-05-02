@@ -125,7 +125,6 @@ function buildSandwichOptions(product, body, basePrice) {
 
   return {
     finalPrice,
-    optionsText: options.join(', '),
     productNameWithOptions: `${product.name} (${options.join(', ')})`
   };
 }
