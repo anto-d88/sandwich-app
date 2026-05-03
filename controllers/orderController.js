@@ -4,7 +4,7 @@ const stripeService = require('../services/stripeService');
 
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
-const SHOP_OPEN= false;
+const SHOP_OPEN= true;
 
 function getParisNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
