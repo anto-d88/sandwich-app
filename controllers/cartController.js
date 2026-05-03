@@ -2,7 +2,7 @@ const supabase = require('../config/supabaseClient');
 const getCartTotal = require('../utils/getCartTotal');
 const orderService = require('../services/orderService');
 
-const SHOP_OPEN = true;
+const SHOP_OPEN = false;
 
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
