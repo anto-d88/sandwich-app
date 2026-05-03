@@ -75,7 +75,7 @@
               <p class="stock-ok">✔ Disponible</p>
             <% } %>
 
-            <p class="product-price">4,50 €</p>
+            <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
             <% if (product.stock_quantity <= 0) { %>
               <button class="btn btn-danger" disabled>Rupture</button>
@@ -116,19 +116,37 @@
                 </div>
 
                 <div class="extras-box crudites-options">
-          <p>Crudités gratuites</p>
+  <p>Crudités gratuites au choix</p>
 
-          <label><input type="checkbox" name="crudites" value="salade" checked> Salade</label>
-          <label><input type="checkbox" name="crudites" value="tomate" checked> Tomate</label>
-          <label><input type="checkbox" name="crudites" value="carotte" checked> Carotte</label>
-        </div>
+  <label class="extra-pill">
+    <input type="checkbox" name="crudites" value="salade" checked>
+    <span>Salade</span>
+  </label>
 
-        <div class="extras-box">
-          <p>Suppléments</p>
+  <label class="extra-pill">
+    <input type="checkbox" name="crudites" value="tomate" checked>
+    <span>Tomate</span>
+  </label>
 
-          <label><input type="checkbox" name="extra_egg"> Œuf +0,50€</label>
-          <label><input type="checkbox" name="extra_cheese"> Fromage +0,50€</label>
-        </div>
+  <label class="extra-pill">
+    <input type="checkbox" name="crudites" value="carotte" checked>
+    <span>Carotte</span>
+  </label>
+</div>
+
+<div class="extras-box paid-options-box">
+  <p>Suppléments</p>
+
+  <label class="extra-pill">
+    <input type="checkbox" name="extra_egg">
+    <span>Œuf +0,50€</span>
+  </label>
+
+  <label class="extra-pill cheese-pill">
+    <input type="checkbox" name="extra_cheese">
+    <span>Tranche de fromage +0,50€</span>
+  </label>
+</div>
 
 
                 <button type="submit" class="btn btn-primary team-add-btn">
@@ -160,7 +178,7 @@
             <p class="stock-ok">✔ Disponible</p>
 
             <div class="product-bottom">
-              <p class="product-price">1,50 €</p>
+              <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
               <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
                 <input type="hidden" name="mode" value="boisson">
@@ -194,7 +212,7 @@
             <p class="stock-ok">✔ Disponible</p>
 
             <div class="product-bottom">
-              <p class="product-price">2,50 €</p>
+              <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
               <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
                 <input type="hidden" name="mode" value="dessert">
@@ -280,8 +298,9 @@
             options.classList.remove('extras-disabled');
 
             inputs.forEach(input => {
-              input.disabled = false;
-            });
+  input.disabled = false;
+  if (!input.checked) input.checked = true;
+});
           }
         }
 
