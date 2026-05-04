@@ -1,5 +1,6 @@
 const messageService = require('../services/messageService');
 const notificationService = require('../services/notificationService');
+const customerService = require('../services/customerService');
 
 exports.getContactPage = (req, res) => {
   res.render('contact', {
@@ -40,6 +41,18 @@ exports.sendCustomerMessage = async (req, res) => {
       subject,
       message,
       priority: message_type === 'reclamation' ? 'haute' : 'normal'
+    });
+
+    await customerService.registerCustomerActivity({
+      full_name: customer_name,
+      phone: customer_phone,
+      email: customer_email,
+      company_name,
+      category: message_type === 'reclamation' ? 'reclamation' : 'client',
+      source: 'message_contact',
+      interaction_type: message_type || 'general',
+      message: `${subject || 'Message client'} — ${message}`,
+      notes: 'Message envoyé depuis la page contact'
     });
 
     notificationService.notifyNewMessage(savedMessage);
@@ -103,6 +116,18 @@ exports.sendMeetingRequest = async (req, res) => {
       preferred_time,
       message,
       priority: 'haute'
+    });
+
+    await customerService.registerCustomerActivity({
+      full_name: customer_name,
+      phone: customer_phone,
+      email: customer_email,
+      company_name,
+      category: 'contact_reunion',
+      source: 'demande_reunion',
+      interaction_type: 'meeting_request',
+      message: `Demande réunion le ${preferred_date} à ${preferred_time} — ${message}`,
+      notes: 'Demande spéciale entreprise / réunion'
     });
 
     notificationService.notifyNewMessage(savedMessage);

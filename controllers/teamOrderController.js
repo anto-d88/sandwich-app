@@ -1,6 +1,7 @@
 const productService = require('../services/productService');
 const teamOrderService = require('../services/teamOrderService');
 const stripeService = require('../services/stripeService');
+const customerService = require('../services/customerService');
 
 const FORMULE_PRICE = 7.50;
 const MAX_TEAM_ORDERS_PER_SLOT = 3;
@@ -99,18 +100,12 @@ function buildSandwichOptions(product, body, basePrice) {
   const extraEgg = body.extra_egg === 'on';
   const extraCheese = body.extra_cheese === 'on';
 
-  if (sauceChoice) {
-    options.push(sauceChoice);
-  }
+  if (sauceChoice) options.push(sauceChoice);
 
   if (cruditesChoice === 'sans') {
     options.push('sans crudités');
   } else {
-    if (cruditesList.length > 0) {
-      options.push(`crudités: ${cruditesList.join(', ')}`);
-    } else {
-      options.push('avec crudités');
-    }
+    options.push(cruditesList.length > 0 ? `crudités: ${cruditesList.join(', ')}` : 'avec crudités');
   }
 
   if (extraEgg) {
@@ -184,6 +179,19 @@ exports.createTeamOrder = async (req, res) => {
       delivery_slot: selectedSlot.value,
       delivery_slot_label: selectedSlot.label,
       status: 'ouverte'
+    });
+
+    await customerService.registerCustomerActivity({
+      full_name: contact_name,
+      phone: contact_phone,
+      email: null,
+      company_name: team_name,
+      company_address: delivery_address,
+      category: 'responsable_equipe',
+      source: 'commande_equipe',
+      interaction_type: 'creation_commande_equipe',
+      message: `Commande équipe créée — ${team_name} — ${selectedSlot.label}`,
+      notes: `Commande équipe #${teamOrder.id} créée mais pas encore payée`
     });
 
     return res.redirect(`/team-order/${teamOrder.id}`);
@@ -385,6 +393,19 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
     if (teamOrder.status !== 'payée') {
       await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
       await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
+
+      await customerService.registerCustomerActivity({
+        full_name: teamOrder.contact_name,
+        phone: teamOrder.contact_phone,
+        email: null,
+        company_name: teamOrder.team_name,
+        company_address: teamOrder.delivery_address,
+        category: 'responsable_equipe',
+        source: 'commande_equipe_payee',
+        interaction_type: 'paiement_commande_equipe',
+        message: `Commande équipe #${teamOrder.id} payée — ${teamOrder.delivery_slot_label || teamOrder.delivery_slot}`,
+        notes: 'Commande équipe payée via Stripe'
+      });
     }
 
     const updatedTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);

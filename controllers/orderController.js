@@ -1,6 +1,7 @@
 const getCartTotal = require('../utils/getCartTotal');
 const orderService = require('../services/orderService');
 const stripeService = require('../services/stripeService');
+const customerService = require('../services/customerService');
 
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
@@ -179,8 +180,9 @@ exports.createCheckoutSession = async (req, res) => {
 
 exports.handlePaymentSuccess = async (req, res) => {
   try {
-          console.log("🔥 SUCCESS CALLBACK TRIGGERED");
-      console.log("SESSION ID:", req.query.session_id);
+    console.log("🔥 SUCCESS CALLBACK TRIGGERED");
+    console.log("SESSION ID:", req.query.session_id);
+
     const sessionId = req.query.session_id;
 
     if (!sessionId) {
@@ -203,7 +205,6 @@ exports.handlePaymentSuccess = async (req, res) => {
         title: 'Commande confirmée',
         order: existingOrder
       });
-
     }
 
     const cart = req.session.cart || [];
@@ -222,6 +223,20 @@ exports.handlePaymentSuccess = async (req, res) => {
       cart
     );
 
+    // ✅ NOUVEAU : ENREGISTREMENT CLIENT
+    await customerService.registerCustomerActivity({
+      full_name: pendingOrder.customer_name,
+      phone: pendingOrder.customer_phone,
+      email: pendingOrder.customer_email,
+      company_name: pendingOrder.company_name,
+      company_address: pendingOrder.delivery_address,
+      category: 'client',
+      source: 'commande_individuelle',
+      interaction_type: 'commande',
+      message: `Commande ${order.id} — ${cart.length} produit(s) — ${pendingOrder.delivery_slot_label}`,
+      notes: 'Commande individuelle payée'
+    });
+
     req.session.cart = [];
     req.session.pendingOrder = null;
 
@@ -229,6 +244,7 @@ exports.handlePaymentSuccess = async (req, res) => {
       title: 'Commande confirmée',
       order
     });
+
   } catch (error) {
     console.error('Erreur handlePaymentSuccess:', error);
     res.status(500).send('Erreur confirmation paiement');
