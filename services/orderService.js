@@ -103,12 +103,18 @@ async function upsertCustomerFromOrder(orderPayload) {
 async function createOrderWithItems(orderPayload, cart) {
   await checkStockBeforeOrder(cart);
 
-  await upsertCustomerFromOrder(orderPayload);
+  try {
+    await upsertCustomerFromOrder(orderPayload);
+  } catch (customerError) {
+    console.error(
+      "Erreur enregistrement client, commande continuée :",
+      customerError
+    );
+  }
 
   const total = cart.reduce((sum, item) => {
     return sum + Number(item.price || 0) * Number(item.quantity || 0);
   }, 0);
-
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert([
