@@ -27,7 +27,10 @@ async function recalculateTeamOrderTotal(teamOrderId) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur recalcul total commande équipe :", error);
+    throw error;
+  }
 
   return data;
 }
@@ -39,13 +42,17 @@ async function createTeamOrder(payload) {
       {
         ...payload,
         total_amount: Number(payload.total_amount || payload.total_price || 0),
-        status: payload.status || "nouvelle",
+        status: payload.status || "ouverte",
       },
     ])
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur création team_orders :", error);
+    throw error;
+  }
+
   return data;
 }
 
@@ -56,7 +63,11 @@ async function getTeamOrderById(teamOrderId) {
     .eq("id", teamOrderId)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur getTeamOrderById :", error);
+    throw error;
+  }
+
   return data;
 }
 
@@ -71,20 +82,25 @@ async function addParticipantItem(payload) {
 
   const lineTotal = Number(payload.line_total || unitPrice * quantity || 0);
 
+  const itemPayload = {
+    ...payload,
+    quantity,
+    unit_price: unitPrice,
+    line_total: lineTotal,
+  };
+
+  console.log("ITEM COMMANDE ÉQUIPE À INSÉRER :", itemPayload);
+
   const { data, error } = await supabase
     .from("team_order_items")
-    .insert([
-      {
-        ...payload,
-        quantity,
-        unit_price: unitPrice,
-        line_total: lineTotal,
-      },
-    ])
+    .insert([itemPayload])
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("ERREUR INSERT team_order_items :", error);
+    throw error;
+  }
 
   if (data.team_order_id) {
     await recalculateTeamOrderTotal(data.team_order_id);
@@ -100,7 +116,11 @@ async function getTeamOrderItems(teamOrderId) {
     .eq("team_order_id", teamOrderId)
     .order("id", { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur getTeamOrderItems :", error);
+    throw error;
+  }
+
   return data || [];
 }
 
@@ -112,7 +132,11 @@ async function updateTeamOrderStripeSessionId(teamOrderId, stripeSessionId) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur update stripe_session_id team_order :", error);
+    throw error;
+  }
+
   return data;
 }
 
@@ -123,7 +147,11 @@ async function getTeamOrderByStripeSessionId(stripeSessionId) {
     .eq("stripe_session_id", stripeSessionId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur getTeamOrderByStripeSessionId :", error);
+    throw error;
+  }
+
   return data;
 }
 
@@ -135,7 +163,11 @@ async function updateTeamOrderStatus(teamOrderId, status) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur updateTeamOrderStatus :", error);
+    throw error;
+  }
+
   return data;
 }
 
@@ -145,7 +177,11 @@ async function countTeamOrdersBySlot(deliverySlot) {
     .select("*", { count: "exact", head: true })
     .eq("delivery_slot", deliverySlot);
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erreur countTeamOrdersBySlot :", error);
+    throw error;
+  }
+
   return count || 0;
 }
 
@@ -156,7 +192,10 @@ async function decrementSingleProductStock(productId, quantity) {
     .eq("id", productId)
     .single();
 
-  if (productError) throw productError;
+  if (productError) {
+    console.error("Erreur récupération produit stock :", productError);
+    throw productError;
+  }
 
   const currentStock = Number(product.stock_quantity || 0);
   const orderedQty = Number(quantity || 0);
@@ -171,7 +210,10 @@ async function decrementSingleProductStock(productId, quantity) {
     .update({ stock_quantity: newStock })
     .eq("id", productId);
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    console.error("Erreur décrémentation stock :", updateError);
+    throw updateError;
+  }
 }
 
 async function decrementStockFromTeamOrder(teamOrderId) {
@@ -180,6 +222,7 @@ async function decrementStockFromTeamOrder(teamOrderId) {
   for (const item of items) {
     if (item.item_type !== "formule") {
       if (!item.product_id) continue;
+
       await decrementSingleProductStock(item.product_id, item.quantity);
     }
 
