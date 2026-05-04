@@ -231,6 +231,7 @@ exports.getJoinPage = async (req, res) => {
 
 exports.addParticipantToTeamOrder = async (req, res) => {
   try {
+    console.log("BODY ADD TEAM ITEM :", req.body);
     const teamOrderId = Number(req.params.id);
     const participantName = req.body.participant_name;
     const mode = req.body.mode;

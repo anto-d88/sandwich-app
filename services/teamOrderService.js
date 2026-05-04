@@ -74,6 +74,11 @@ async function getTeamOrderById(teamOrderId) {
 async function addParticipantItem(payload) {
   const quantity = Number(payload.quantity || 1);
 
+  if (!payload.team_order_id || !payload.participant_name || !payload.product_id || !payload.mode && !payload.item_type) {
+  console.error("AJOUT ITEM ÉQUIPE BLOQUÉ - PAYLOAD INCOMPLET :", payload);
+  throw new Error("Ajout item équipe bloqué : payload incomplet");
+}
+
   const unitPrice =
     Number(payload.unit_price || 0) ||
     Number(payload.price || 0) ||
