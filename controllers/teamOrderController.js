@@ -401,18 +401,25 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
       await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
       await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
 
-      await customerService.registerCustomerActivity({
-        full_name: teamOrder.contact_name,
-        phone: teamOrder.contact_phone,
-        email: null,
-        company_name: teamOrder.team_name,
-        company_address: teamOrder.delivery_address,
-        category: 'responsable_equipe',
-        source: 'commande_equipe_payee',
-        interaction_type: 'paiement_commande_equipe',
-        message: `Commande équipe #${teamOrder.id} payée — ${teamOrder.delivery_slot_label || teamOrder.delivery_slot}`,
-        notes: 'Commande équipe payée via Stripe'
-      });
+try {
+  await customerService.registerCustomerActivity({
+    full_name: teamOrder.contact_name,
+    phone: teamOrder.contact_phone,
+    email: null,
+    company_name: teamOrder.team_name,
+    company_address: teamOrder.delivery_address,
+    category: 'responsable_equipe',
+    source: 'commande_equipe_payee',
+    interaction_type: 'paiement_commande_equipe',
+    message: `Commande équipe #${teamOrder.id} payée — ${teamOrder.delivery_slot_label || teamOrder.delivery_slot}`,
+    notes: 'Commande équipe payée via Stripe'
+  });
+} catch (customerError) {
+  console.error(
+    'Erreur enregistrement client après paiement équipe, paiement continué :',
+    customerError
+  );
+}
     }
 
     const updatedTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
