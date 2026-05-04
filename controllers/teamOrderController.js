@@ -181,18 +181,25 @@ exports.createTeamOrder = async (req, res) => {
       status: 'ouverte'
     });
 
-    await customerService.registerCustomerActivity({
-      full_name: contact_name,
-      phone: contact_phone,
-      email: null,
-      company_name: team_name,
-      company_address: delivery_address,
-      category: 'responsable_equipe',
-      source: 'commande_equipe',
-      interaction_type: 'creation_commande_equipe',
-      message: `Commande équipe créée — ${team_name} — ${selectedSlot.label}`,
-      notes: `Commande équipe #${teamOrder.id} créée mais pas encore payée`
-    });
+    try {
+      await customerService.registerCustomerActivity({
+        full_name: contact_name,
+        phone: contact_phone,
+        email: null,
+        company_name: team_name,
+        company_address: delivery_address,
+        category: 'responsable_equipe',
+        source: 'commande_equipe',
+        interaction_type: 'creation_commande_equipe',
+        message: `Commande équipe créée — ${team_name} — ${selectedSlot.label}`,
+        notes: `Commande équipe #${teamOrder.id} créée mais pas encore payée`
+      });
+    } catch (customerError) {
+      console.error(
+        'Erreur enregistrement client équipe, commande continuée :',
+        customerError
+      );
+    }
 
     return res.redirect(`/team-order/${teamOrder.id}`);
   } catch (error) {
