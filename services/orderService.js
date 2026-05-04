@@ -1,15 +1,114 @@
 const supabase = require("../config/supabaseClient");
 
+function cleanText(value) {
+  return value ? String(value).trim() : null;
+}
+
+function getCustomerPhone(orderPayload) {
+  return cleanText(
+    orderPayload.customer_phone ||
+      orderPayload.phone ||
+      orderPayload.contact_phone
+  );
+}
+
+function getCustomerName(orderPayload) {
+  return cleanText(
+    orderPayload.customer_name ||
+      orderPayload.name ||
+      orderPayload.contact_name
+  );
+}
+
+function getCustomerEmail(orderPayload) {
+  return cleanText(
+    orderPayload.customer_email ||
+      orderPayload.email ||
+      orderPayload.contact_email
+  );
+}
+
+function getCompanyName(orderPayload) {
+  return cleanText(
+    orderPayload.company_name ||
+      orderPayload.company ||
+      orderPayload.enterprise_name
+  );
+}
+
+function getDeliveryAddress(orderPayload) {
+  return cleanText(
+    orderPayload.delivery_address ||
+      orderPayload.address
+  );
+}
+
+async function upsertCustomerFromOrder(orderPayload) {
+  const phone = getCustomerPhone(orderPayload);
+
+  if (!phone) {
+    return null;
+  }
+
+  const customerPayload = {
+    name: getCustomerName(orderPayload),
+    phone,
+    email: getCustomerEmail(orderPayload),
+    company_name: getCompanyName(orderPayload),
+    address: getDeliveryAddress(orderPayload),
+    last_activity: new Date().toISOString(),
+  };
+
+  Object.keys(customerPayload).forEach((key) => {
+    if (customerPayload[key] === null || customerPayload[key] === undefined) {
+      delete customerPayload[key];
+    }
+  });
+
+  const { data: existingCustomer, error: findError } = await supabase
+    .from("customers")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+
+  if (findError) throw findError;
+
+  if (existingCustomer) {
+    const { data, error } = await supabase
+      .from("customers")
+      .update(customerPayload)
+      .eq("id", existingCustomer.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  const { data, error } = await supabase
+    .from("customers")
+    .insert([
+      {
+        ...customerPayload,
+        created_at: new Date().toISOString(),
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 async function createOrderWithItems(orderPayload, cart) {
-  // 🔥 1. Vérification du stock AVANT commande
   await checkStockBeforeOrder(cart);
 
-  // 🔥 2. Calcul du total
+  await upsertCustomerFromOrder(orderPayload);
+
   const total = cart.reduce((sum, item) => {
     return sum + Number(item.price || 0) * Number(item.quantity || 0);
   }, 0);
 
-  // 🔥 3. Création commande
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert([
@@ -24,7 +123,6 @@ async function createOrderWithItems(orderPayload, cart) {
 
   if (orderError) throw orderError;
 
-  // 🔥 4. Création order_items
   const orderItems = cart.map((item) => ({
     order_id: order.id,
     product_id: Number(item.id) || null,
@@ -40,7 +138,6 @@ async function createOrderWithItems(orderPayload, cart) {
 
   if (itemsError) throw itemsError;
 
-  // 🔥 5. Décrémentation stock
   await decrementStockFromCart(cart);
 
   return order;
@@ -67,7 +164,6 @@ async function countOrdersBySlot(deliverySlot) {
   return count || 0;
 }
 
-// 🔥 Vérification du stock AVANT commande
 async function checkStockBeforeOrder(cart) {
   for (const item of cart) {
     if (item.is_formula && item.formula_items) {
@@ -103,7 +199,6 @@ async function checkSingleProductStock(productId, quantity) {
   }
 }
 
-// 🔥 Décrémentation stock
 async function decrementSingleProductStock(productId, quantity) {
   const { data: product, error: productError } = await supabase
     .from("products")
@@ -146,4 +241,5 @@ module.exports = {
   getOrderByStripeSessionId,
   countOrdersBySlot,
   decrementStockFromCart,
+  upsertCustomerFromOrder,
 };
