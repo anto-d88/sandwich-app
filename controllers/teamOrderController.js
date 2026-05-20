@@ -221,7 +221,8 @@ exports.getJoinPage = async (req, res) => {
       items,
       sandwiches: products.filter(p => p.category === 'sandwich'),
       boissons: products.filter(p => p.category === 'boisson'),
-      desserts: products.filter(p => p.category === 'dessert')
+      desserts: products.filter(p => p.category === 'dessert'),
+      salades: products.filter(p => p.category === 'salades')
     });
   } catch (error) {
     console.error('Erreur getJoinPage:', error);
@@ -242,7 +243,7 @@ exports.addParticipantToTeamOrder = async (req, res) => {
 
     const products = await productService.getAllAvailableProducts();
 
-    if (mode === 'sandwich' || mode === 'boisson' || mode === 'dessert') {
+    if (mode === 'sandwich' || mode === 'boisson' || mode === 'dessert' || mode === 'salade') {
       const productId = Number(req.body.product_id);
       const quantity = Number(req.body.quantity) || 1;
       const product = products.find(p => p.id === productId);
