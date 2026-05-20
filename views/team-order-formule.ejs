@@ -92,6 +92,70 @@
   <label><input type="checkbox" name="extra_cheese"> Fromage +0,50€</label>
 </div>
 
+<section class="page-intro" style="margin-top: 34px;">
+  <h2>🥗 Salades</h2>
+  <p>Des salades fraîches préparées chaque matin.</p>
+</section>
+
+<section class="products-grid">
+  <% products.filter(product => product.category === 'salades').forEach(product => { %>
+
+    <article class="product-card product-card--pro">
+      <div class="product-image-wrap">
+        <img
+          src="<%= product.image_url || '/images/default-product.jpg' %>"
+          alt="<%= product.name %>"
+          class="product-image"
+        >
+      </div>
+
+      <div class="product-card__content">
+        <span class="product-category">salade</span>
+
+        <h2><%= product.name %></h2>
+
+        <p class="product-description">
+          <%= product.description || '' %>
+        </p>
+
+        <% if (product.stock_quantity <= 0) { %>
+
+          <button class="btn btn-danger" disabled>
+            Rupture de stock
+          </button>
+
+        <% } else { %>
+
+          <p class="product-price">
+            <%= Number(product.price).toFixed(2).replace('.', ',') %> €
+          </p>
+
+          <form action="/team-order/add" method="POST" class="product-form-inline">
+
+            <input type="hidden" name="product_id" value="<%= product.id %>">
+
+            <input
+              type="number"
+              name="quantity"
+              value="1"
+              min="1"
+              max="<%= product.stock_quantity %>"
+              class="qty-input"
+            >
+
+            <button type="submit" class="btn btn-primary">
+              Ajouter
+            </button>
+
+          </form>
+
+        <% } %>
+      </div>
+    </article>
+
+  <% }) %>
+</section>
+
       <section class="formula-column">
         <h2>🥤 Boisson</h2>
 
