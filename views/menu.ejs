@@ -125,8 +125,8 @@
     </section>
 
     <section class="page-intro" style="margin-top: 34px;">
-      <h2>🥗 Salades</h2>
-      <p>Des bowls frais préparés chaque matin avec des ingrédients de qualité.</p>
+      <h2>🥗 Salades / Bowls</h2>
+      <p>Petits bowls et grands bowls frais préparés chaque matin.</p>
     </section>
 
     <section class="products-grid">
@@ -141,17 +141,21 @@
             <h2><%= product.name %></h2>
             <p class="product-description"><%= product.description || 'Salade fraîche du jour' %></p>
 
-            <div class="salad-size-row">
-              <span class="salad-size-badge salad-size-badge--small">
-                <span class="css-bowl css-bowl--small"></span>
-                Petit bowl
-              </span>
-
-              <span class="salad-size-badge salad-size-badge--large">
-                <span class="css-bowl css-bowl--large"></span>
-                Grand bowl
-              </span>
-            </div>
+            <% if ((product.name || '').toLowerCase().includes('petit')) { %>
+              <div class="salad-size-row">
+                <span class="salad-size-badge salad-size-badge--small">
+                  <span class="css-bowl css-bowl--small"></span>
+                  Petit bowl
+                </span>
+              </div>
+            <% } else { %>
+              <div class="salad-size-row">
+                <span class="salad-size-badge salad-size-badge--large">
+                  <span class="css-bowl css-bowl--large"></span>
+                  Grand bowl
+                </span>
+              </div>
+            <% } %>
 
             <% if (product.stock_quantity <= 0) { %>
               <span class="product-badge product-badge--danger">Rupture</span>
