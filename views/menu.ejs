@@ -46,15 +46,11 @@
             <% if (product.stock_quantity <= 0) { %>
               <span class="product-badge product-badge--danger">Rupture</span>
               <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-            <% } else { %>
-              <p class="stock-ok">✔ Disponible</p>
-            <% } %>
-
-            <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
-
-            <% if (product.stock_quantity <= 0) { %>
               <button class="btn btn-danger" disabled>Rupture de stock</button>
             <% } else { %>
+              <p class="stock-ok">✔ Disponible</p>
+              <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
+
               <form action="/cart/add" method="POST" class="product-form">
                 <input type="hidden" name="id" value="<%= product.id %>">
 
@@ -125,42 +121,89 @@
     </section>
 
     <section class="page-intro" style="margin-top: 34px;">
-      <h2>🥗 Salades / Bowls</h2>
-      <p>Petits bowls et grands bowls frais préparés chaque matin.</p>
+      <h2>🥣 Petits Bowls</h2>
+      <p>Des bowls légers et frais pour une pause rapide.</p>
     </section>
 
     <section class="products-grid">
-      <% products.filter(product => product.category === 'salades').forEach(product => { %>
+      <% products.filter(product =>
+        product.category === 'salades' &&
+        (product.name || '').toLowerCase().includes('petit')
+      ).forEach(product => { %>
+
         <article class="product-card product-card--pro">
           <a href="/product/<%= product.id %>" class="product-image-wrap">
             <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
           </a>
 
           <div class="product-card__content">
-            <span class="product-category">salade</span>
+            <span class="product-category">petit bowl</span>
             <h2><%= product.name %></h2>
-            <p class="product-description"><%= product.description || 'Salade fraîche du jour' %></p>
+            <p class="product-description"><%= product.description || 'Petit bowl frais du jour' %></p>
 
-            <% if ((product.name || '').toLowerCase().includes('petit')) { %>
-              <div class="salad-size-row">
-                <span class="salad-size-badge salad-size-badge--small">
-                  <span class="css-bowl css-bowl--small"></span>
-                  Petit bowl
-                </span>
-              </div>
-            <% } else { %>
-              <div class="salad-size-row">
-                <span class="salad-size-badge salad-size-badge--large">
-                  <span class="css-bowl css-bowl--large"></span>
-                  Grand bowl
-                </span>
-              </div>
-            <% } %>
+            <div class="salad-size-row">
+              <span class="salad-size-badge salad-size-badge--small">
+                <span class="css-bowl css-bowl--small"></span>
+                Petit bowl
+              </span>
+            </div>
 
             <% if (product.stock_quantity <= 0) { %>
               <span class="product-badge product-badge--danger">Rupture</span>
               <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-              <button class="btn btn-danger" disabled>Rupture de stock</button>
+              <button class="btn btn-danger" disabled>Rupture</button>
+            <% } else { %>
+              <p class="stock-ok">✔ Disponible</p>
+
+              <div class="product-bottom">
+                <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
+
+                <form action="/cart/add" method="POST" class="product-form-inline">
+                  <input type="hidden" name="id" value="<%= product.id %>">
+                  <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
+                  <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+              </div>
+            <% } %>
+
+            <a href="/product/<%= product.id %>" class="product-link">Voir le détail</a>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+
+    <section class="page-intro" style="margin-top: 34px;">
+      <h2>🥗 Grands Bowls</h2>
+      <p>Des bowls généreux pour un repas complet et gourmand.</p>
+    </section>
+
+    <section class="products-grid">
+      <% products.filter(product =>
+        product.category === 'salades' &&
+        (product.name || '').toLowerCase().includes('grand')
+      ).forEach(product => { %>
+
+        <article class="product-card product-card--pro">
+          <a href="/product/<%= product.id %>" class="product-image-wrap">
+            <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
+          </a>
+
+          <div class="product-card__content">
+            <span class="product-category">grand bowl</span>
+            <h2><%= product.name %></h2>
+            <p class="product-description"><%= product.description || 'Grand bowl frais du jour' %></p>
+
+            <div class="salad-size-row">
+              <span class="salad-size-badge salad-size-badge--large">
+                <span class="css-bowl css-bowl--large"></span>
+                Grand bowl
+              </span>
+            </div>
+
+            <% if (product.stock_quantity <= 0) { %>
+              <span class="product-badge product-badge--danger">Rupture</span>
+              <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
+              <button class="btn btn-danger" disabled>Rupture</button>
             <% } else { %>
               <p class="stock-ok">✔ Disponible</p>
 
