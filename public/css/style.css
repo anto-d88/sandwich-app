@@ -1067,3 +1067,79 @@ textarea {
   opacity: 0.45;
   background: #f3f4f6;
 }
+
+.salad-size-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.salad-size-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.salad-size-badge--small {
+  color: #166534;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+}
+
+.salad-size-badge--large {
+  color: #854d0e;
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+}
+
+.css-bowl {
+  position: relative;
+  display: inline-block;
+  width: 24px;
+  height: 18px;
+}
+
+.css-bowl::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  width: 20px;
+  height: 11px;
+  border-radius: 0 0 14px 14px;
+  background: currentColor;
+}
+
+.css-bowl::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 2px;
+  width: 22px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 3px solid currentColor;
+  box-sizing: border-box;
+}
+
+.css-bowl--large {
+  width: 30px;
+  height: 21px;
+}
+
+.css-bowl--large::before {
+  width: 26px;
+  height: 13px;
+}
+
+.css-bowl--large::after {
+  width: 28px;
+  height: 9px;
+}

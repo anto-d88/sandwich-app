@@ -165,42 +165,113 @@
 
    <section class="page-intro" style="margin-top: 34px;">
   <h2>🥗 Salades seules</h2>
-  <p>Ajoutez uniquement une salade à la commande d’équipe.</p>
+  <p>
+    Des bowls frais préparés chaque matin avec des ingrédients de qualité.
+  </p>
 </section>
 
-<div class="products-grid products-grid--small">
+<div class="products-grid">
   <% salades.forEach(product => { %>
+
     <article class="product-card product-card--pro">
       <div class="product-image-wrap">
-        <img src="<%= product.image_url || '/images/default-product.jpg' %>" alt="<%= product.name %>" class="product-image">
+        <img
+          src="<%= product.image_url || '/images/default-product.jpg' %>"
+          alt="<%= product.name %>"
+          class="product-image"
+        >
       </div>
 
       <div class="product-card__content">
+
         <span class="product-category">salade</span>
+
         <h2><%= product.name %></h2>
-        <p class="product-description"><%= product.description || 'Salade fraîche du jour' %></p>
+
+        <p class="product-description">
+          <%= product.description || 'Salade fraîche du jour' %>
+        </p>
+
+        <div class="salad-size-row">
+
+          <span class="salad-size-badge salad-size-badge--small">
+            <span class="css-bowl css-bowl--small"></span>
+            Petit bowl
+          </span>
+
+          <span class="salad-size-badge salad-size-badge--large">
+            <span class="css-bowl css-bowl--large"></span>
+            Grand bowl
+          </span>
+
+        </div>
 
         <% if (product.stock_quantity <= 0) { %>
-          <span class="product-badge product-badge--danger">Rupture</span>
-          <p class="stock-warning stock-warning--danger">❌ Rupture de stock</p>
-          <button class="btn btn-danger" disabled>Rupture</button>
+
+          <span class="product-badge product-badge--danger">
+            Rupture
+          </span>
+
+          <p class="stock-warning stock-warning--danger">
+            ❌ Rupture de stock
+          </p>
+
+          <button class="btn btn-danger" disabled>
+            Rupture
+          </button>
+
         <% } else { %>
+
           <p class="stock-ok">✔ Disponible</p>
 
           <div class="product-bottom">
-            <p class="product-price"><%= Number(product.price).toFixed(2).replace('.', ',') %> €</p>
 
-            <form action="/team-order/<%= teamOrder.id %>/add" method="POST" class="team-inline-form">
+            <p class="product-price">
+              <%= Number(product.price).toFixed(2).replace('.', ',') %> €
+            </p>
+
+            <form
+              action="/team-order/<%= teamOrder.id %>/add"
+              method="POST"
+              class="team-inline-form"
+            >
+
               <input type="hidden" name="mode" value="salade">
-              <input type="hidden" name="participant_name" class="participant-name-hidden">
-              <input type="hidden" name="product_id" value="<%= product.id %>">
-              <input type="number" name="quantity" value="1" min="1" max="<%= product.stock_quantity %>" class="qty-input">
-              <button type="submit" class="btn btn-primary">Ajouter</button>
+
+              <input
+                type="hidden"
+                name="participant_name"
+                class="participant-name-hidden"
+              >
+
+              <input
+                type="hidden"
+                name="product_id"
+                value="<%= product.id %>"
+              >
+
+              <input
+                type="number"
+                name="quantity"
+                value="1"
+                min="1"
+                max="<%= product.stock_quantity %>"
+                class="qty-input"
+              >
+
+              <button type="submit" class="btn btn-primary">
+                Ajouter
+              </button>
+
             </form>
+
           </div>
+
         <% } %>
+
       </div>
     </article>
+
   <% }) %>
 </div>
 
