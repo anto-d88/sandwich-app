@@ -4,6 +4,13 @@
   <%- include('partials/head') %>
 </head>
 <body>
+  <% if (shopClosed) { %>
+  <div class="closed-banner">
+    🚫 La Pause Sandwich est exceptionnellement fermée aujourd’hui pour raison familiale ❤️
+    <br>
+    Merci pour votre compréhension.
+  </div>
+<% } %>
   <%- include('partials/header') %>
 
   <main class="home-page">

@@ -17,6 +17,8 @@ const formuleRoutes = require('./routes/formule');
 const messageRoutes = require('./routes/messages');
 const adminMessagesRoutes = require('./routes/adminMessages');
 
+const SHOP_CLOSED = true;
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -54,6 +56,32 @@ app.use((req, res, next) => {
   res.locals.admin = req.session.admin || null;
   res.locals.cart = req.session.cart || [];
   next();
+});
+
+app.use((req, res, next) => {
+  if (!SHOP_CLOSED) {
+    return next();
+  }
+
+  const allowedRoutes = [
+    "/",
+    "/menu",
+    "/contact",
+    "/assets",
+    "/css",
+    "/images"
+  ];
+
+  const isAllowed = allowedRoutes.some(route =>
+    req.path.startsWith(route)
+  );
+
+  if (isAllowed) {
+    res.locals.shopClosed = true;
+    return next();
+  }
+
+  return res.redirect("/");
 });
 
 // routes
