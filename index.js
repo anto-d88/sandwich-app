@@ -55,6 +55,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   res.locals.admin = req.session.admin || null;
   res.locals.cart = req.session.cart || [];
+  res.locals.shopClosed = SHOP_CLOSED;
   next();
 });
 
