@@ -2,6 +2,9 @@ const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const FORCE_TEST_EMAIL = process.env.FORCE_TEST_EMAIL === "true";
+const TEST_EMAIL_TO = process.env.TEST_EMAIL_TO || "antonio-123@hotmail.be";
+
 function formatPrice(value) {
   return Number(value || 0).toFixed(2).replace(".", ",") + "€";
 }
@@ -51,10 +54,16 @@ async function sendOrderConfirmationEmail(order) {
     return null;
   }
 
-  const to = order.customer_email || order.email;
+  const realCustomerEmail = order.customer_email || order.email;
+  const to = FORCE_TEST_EMAIL ? TEST_EMAIL_TO : realCustomerEmail;
+
+  console.log("📧 Email confirmation commande");
+  console.log("Destinataire réel :", realCustomerEmail);
+  console.log("Destinataire utilisé :", to);
+  console.log("Mode test forcé :", FORCE_TEST_EMAIL);
 
   const { data, error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM,
+    from: process.env.EMAIL_FROM || "La Pause Sandwich <onboarding@resend.dev>",
     to: [to],
     subject: "Votre commande La Pause Sandwich est confirmée ✅",
     html: buildOrderConfirmationEmail(order),
