@@ -274,3 +274,28 @@ exports.handlePaymentCancel = (req, res) => {
     title: "Paiement annulé",
   });
 };
+
+exports.testEmail = async (req, res) => {
+  try {
+    const fakeStripeSession = {
+      customer_details: {
+        email: "TON_EMAIL_ICI@gmail.com",
+      },
+      metadata: {
+        customer_name: "Antonio",
+        customer_email: "TON_EMAIL_ICI@gmail.com",
+        company_name: "Lixem",
+        delivery_address: "3 allée de la marque Wasquehal",
+        delivery_slot: "Aujourd’hui 13h",
+      },
+      amount_total: 1650,
+    };
+
+    await sendOrderConfirmationEmail(fakeStripeSession);
+
+    return res.send("✅ Mail test envoyé");
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("❌ Erreur test mail");
+  }
+};

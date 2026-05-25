@@ -11,4 +11,6 @@ router.get('/success', orderController.handlePaymentSuccess);
 
 router.get('/cancel', orderController.handlePaymentCancel);
 
+router.get('/test-email', orderController.testEmail);
+
 module.exports = router;
