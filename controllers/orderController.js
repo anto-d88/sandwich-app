@@ -2,6 +2,7 @@ const getCartTotal = require("../utils/getCartTotal");
 const orderService = require("../services/orderService");
 const stripeService = require("../services/stripeService");
 const customerService = require("../services/customerService");
+const { sendOrderConfirmationEmail } = require("../services/emailService");
 
 const MAX_ORDERS_PER_SLOT = 10;
 const DELIVERY_SLOTS = ["11:00", "13:00", "15:00"];
@@ -241,6 +242,17 @@ exports.handlePaymentSuccess = async (req, res) => {
       console.error(
         "Erreur enregistrement client, commande confirmée quand même :",
         customerError
+      );
+    }
+
+    // ✅ ENVOI MAIL AUTOMATIQUE
+    try {
+      await sendOrderConfirmationEmail(stripeSession);
+      console.log("✅ Mail de confirmation envoyé");
+    } catch (emailError) {
+      console.error(
+        "Erreur envoi mail, commande confirmée quand même :",
+        emailError
       );
     }
 

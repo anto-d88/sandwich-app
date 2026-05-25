@@ -25,6 +25,7 @@
     "express": "^5.2.1",
     "express-session": "^1.18.1",
     "method-override": "^3.0.0",
+    "resend": "^6.12.3",
     "stripe": "^22.0.1"
   },
   "devDependencies": {
