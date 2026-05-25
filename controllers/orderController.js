@@ -247,7 +247,15 @@ exports.handlePaymentSuccess = async (req, res) => {
 
     // ✅ ENVOI MAIL AUTOMATIQUE
     try {
-      await sendOrderConfirmationEmail(stripeSession);
+      await sendOrderConfirmationEmail({
+  customer_name: pendingOrder.customer_name,
+  customer_email: pendingOrder.customer_email,
+  customer_phone: pendingOrder.customer_phone,
+  company: pendingOrder.company_name,
+  delivery_address: pendingOrder.delivery_address,
+  delivery_slot: pendingOrder.delivery_slot_label,
+  total_amount: getCartTotal(cart),
+});
       console.log("✅ Mail de confirmation envoyé");
     } catch (emailError) {
       console.error(
