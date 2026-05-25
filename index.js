@@ -64,14 +64,15 @@ app.use((req, res, next) => {
     return next();
   }
 
-  const allowedRoutes = [
-    "/",
-    "/menu",
-    "/contact",
-    "/assets",
-    "/css",
-    "/images"
-  ];
+const allowedRoutes = [
+  "/",
+  "/menu",
+  "/contact",
+  "/assets",
+  "/css",
+  "/images",
+  "/order/test-email"
+];
 
   const isAllowed = allowedRoutes.some(route =>
     req.path.startsWith(route)
