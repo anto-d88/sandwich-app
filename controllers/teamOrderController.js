@@ -221,7 +221,7 @@ exports.getJoinPage = async (req, res) => {
       items,
       sandwiches: products.filter(p => p.category === 'sandwich'),
       boissons: products.filter(p => p.category === 'boisson'),
-      desserts: products.filter(p => p.category === 'dessert'),
+      desserts: products.filter(p => p.category === 'dessert' || p.category === 'desserts'),
       salades: products.filter(p => p.category === 'salades')
     });
   } catch (error) {
@@ -292,7 +292,7 @@ exports.getTeamFormulePage = async (req, res) => {
       teamOrder,
       sandwiches: products.filter(p => p.category === 'sandwich'),
       boissons: products.filter(p => p.category === 'boisson'),
-      desserts: products.filter(p => p.category === 'dessert'),
+      desserts: products.filter(p => p.category === 'dessert' || p.category === 'desserts'),
       formulePrice: FORMULE_PRICE
     });
   } catch (error) {
