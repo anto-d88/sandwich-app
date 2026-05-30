@@ -64,19 +64,12 @@ app.use((req, res, next) => {
     return next();
   }
 
-const allowedRoutes = [
-  "/",
-  "/menu",
-  "/contact",
-  "/assets",
-  "/css",
-  "/images",
-  "/order/test-email"
-];
 
-  const isAllowed = allowedRoutes.some(route =>
-    req.path.startsWith(route)
-  );
+const isAllowed =
+  req.path === "/" ||
+  req.path.startsWith("/assets") ||
+  req.path.startsWith("/css") ||
+  req.path.startsWith("/images");
 
   if (isAllowed) {
     res.locals.shopClosed = true;
