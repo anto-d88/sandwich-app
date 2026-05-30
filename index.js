@@ -17,7 +17,7 @@ const formuleRoutes = require('./routes/formule');
 const messageRoutes = require('./routes/messages');
 const adminMessagesRoutes = require('./routes/adminMessages');
 
-const SHOP_CLOSED = process.env.APP_CLOSED === "true";
+const SHOP_CLOSED = process.env.APP_CLOSED === "false";
 
 const app = express();
 const PORT = process.env.PORT || 3000;

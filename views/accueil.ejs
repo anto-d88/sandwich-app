@@ -5,11 +5,110 @@
 </head>
 <body>
   <% if (shopClosed) { %>
-  <div class="closed-banner">
-    🚫 La Pause Sandwich est exceptionnellement fermée aujourd’hui pour raison familiale ❤️
-    <br>
-    Merci pour votre compréhension.
+
+<style>
+.closed-page{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:2rem;
+  background:
+    linear-gradient(135deg,#0f172a,#1e293b,#334155);
+}
+
+.closed-card{
+  width:100%;
+  max-width:700px;
+  text-align:center;
+  padding:4rem 2rem;
+  border-radius:32px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 25px 60px rgba(0,0,0,.35);
+  color:white;
+}
+
+.closed-logo{
+  font-size:5rem;
+  margin-bottom:1rem;
+}
+
+.closed-badge{
+  display:inline-block;
+  padding:.7rem 1.4rem;
+  background:#ef4444;
+  color:white;
+  font-weight:700;
+  border-radius:999px;
+  margin-bottom:2rem;
+}
+
+.closed-title{
+  font-size:3rem;
+  margin-bottom:1rem;
+}
+
+.closed-divider{
+  width:90px;
+  height:4px;
+  background:rgba(255,255,255,.3);
+  margin:2rem auto;
+  border-radius:999px;
+}
+
+.closed-text{
+  font-size:1.2rem;
+  opacity:.95;
+}
+
+.closed-footer{
+  margin-top:2rem;
+  opacity:.7;
+}
+
+@media(max-width:768px){
+  .closed-title{
+    font-size:2rem;
+  }
+
+  .closed-logo{
+    font-size:4rem;
+  }
+
+  .closed-text{
+    font-size:1rem;
+  }
+}
+</style>
+
+<div class="closed-page">
+  <div class="closed-card">
+
+    <div class="closed-logo">🥪</div>
+
+    <div class="closed-badge">
+      FERMÉ
+    </div>
+
+    <h1 class="closed-title">
+      La Pause Sandwich
+    </h1>
+
+    <div class="closed-divider"></div>
+
+    <p class="closed-text">
+      La Pause Sandwich est actuellement fermée.
+    </p>
+
+    <div class="closed-footer">
+      Merci de votre visite.
+    </div>
+
   </div>
+</div>
+
 <% } else { %>
   <%- include('partials/header') %>
 
