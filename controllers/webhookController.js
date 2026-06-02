@@ -1,7 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const orderService = require('../services/orderService');
 const teamOrderService = require('../services/teamOrderService');
-
+const notificationService = require("../services/notificationService");
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 exports.handleWebhook = async (req, res) => {
@@ -44,6 +44,8 @@ exports.handleWebhook = async (req, res) => {
         if (teamOrder.status !== 'payée') {
           await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
           await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
+          const paidTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
+await notificationService.notifyNewTeamOrder(paidTeamOrder);
           await teamOrderService.updateTeamOrderStripeSessionId(teamOrderId, session.id);
 
           console.log(`✅ Commande équipe #${teamOrderId} validée via webhook`);
