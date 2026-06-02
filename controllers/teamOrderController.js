@@ -2,6 +2,7 @@ const productService = require('../services/productService');
 const teamOrderService = require('../services/teamOrderService');
 const stripeService = require('../services/stripeService');
 const customerService = require('../services/customerService');
+const notificationService = require('../services/notificationService');
 
 const FORMULE_PRICE = 7.50;
 const MAX_TEAM_ORDERS_PER_SLOT = 3;
@@ -37,7 +38,7 @@ function isTodaySlotClosed(slotTime) {
   const now = getParisNow();
   const slotDate = createSlotDate(slotTime, 0);
   const cutoffMinutes = slotTime === "12:30" ? 90 : 50;
-const cutoffDate = new Date(slotDate.getTime() - cutoffMinutes * 60 * 1000);
+  const cutoffDate = new Date(slotDate.getTime() - cutoffMinutes * 60 * 1000);
 
   return now >= cutoffDate;
 }
@@ -196,10 +197,7 @@ exports.createTeamOrder = async (req, res) => {
         notes: `Commande équipe #${teamOrder.id} créée mais pas encore payée`
       });
     } catch (customerError) {
-      console.error(
-        'Erreur enregistrement client équipe, commande continuée :',
-        customerError
-      );
+      console.error('Erreur enregistrement client équipe, commande continuée :', customerError);
     }
 
     return res.redirect(`/team-order/${teamOrder.id}`);
@@ -234,6 +232,7 @@ exports.getJoinPage = async (req, res) => {
 exports.addParticipantToTeamOrder = async (req, res) => {
   try {
     console.log("BODY ADD TEAM ITEM :", req.body);
+
     const teamOrderId = Number(req.params.id);
     const participantName = req.body.participant_name;
     const mode = req.body.mode;
@@ -403,29 +402,31 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
     if (teamOrder.status !== 'payée') {
       await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
       await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
+
       const paidTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
-await notificationService.notifyNewTeamOrder(paidTeamOrder);
 
+      try {
+        await notificationService.notifyNewTeamOrder(paidTeamOrder);
+      } catch (notifyError) {
+        console.error('Erreur notification Telegram équipe :', notifyError);
+      }
 
-try {
-  await customerService.registerCustomerActivity({
-    full_name: teamOrder.contact_name,
-    phone: teamOrder.contact_phone,
-    email: null,
-    company_name: teamOrder.team_name,
-    company_address: teamOrder.delivery_address,
-    category: 'responsable_equipe',
-    source: 'commande_equipe_payee',
-    interaction_type: 'paiement_commande_equipe',
-    message: `Commande équipe #${teamOrder.id} payée — ${teamOrder.delivery_slot_label || teamOrder.delivery_slot}`,
-    notes: 'Commande équipe payée via Stripe'
-  });
-} catch (customerError) {
-  console.error(
-    'Erreur enregistrement client après paiement équipe, paiement continué :',
-    customerError
-  );
-}
+      try {
+        await customerService.registerCustomerActivity({
+          full_name: teamOrder.contact_name,
+          phone: teamOrder.contact_phone,
+          email: null,
+          company_name: teamOrder.team_name,
+          company_address: teamOrder.delivery_address,
+          category: 'responsable_equipe',
+          source: 'commande_equipe_payee',
+          interaction_type: 'paiement_commande_equipe',
+          message: `Commande équipe #${teamOrder.id} payée — ${teamOrder.delivery_slot_label || teamOrder.delivery_slot}`,
+          notes: 'Commande équipe payée via Stripe'
+        });
+      } catch (customerError) {
+        console.error('Erreur enregistrement client après paiement équipe, paiement continué :', customerError);
+      }
     }
 
     const updatedTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
