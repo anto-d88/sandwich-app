@@ -41,15 +41,18 @@ exports.handleWebhook = async (req, res) => {
           return res.status(200).send('OK');
         }
 
-        if (teamOrder.status !== 'payée') {
-          await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
-          await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
-          const paidTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
-await notificationService.notifyNewTeamOrder(paidTeamOrder);
-          await teamOrderService.updateTeamOrderStripeSessionId(teamOrderId, session.id);
+if (teamOrder.status !== 'payée') {
+  await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
+  await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
+  await teamOrderService.updateTeamOrderStripeSessionId(teamOrderId, session.id);
 
-          console.log(`✅ Commande équipe #${teamOrderId} validée via webhook`);
-        }
+  console.log(`✅ Commande équipe #${teamOrderId} validée via webhook`);
+}
+
+const paidTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
+await notificationService.notifyNewTeamOrder(paidTeamOrder);
+
+console.log(`📲 Notification Telegram envoyée pour commande équipe #${teamOrderId}`);
 
         return res.status(200).send('OK');
       }
