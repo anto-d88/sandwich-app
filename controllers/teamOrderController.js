@@ -403,6 +403,9 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
     if (teamOrder.status !== 'payée') {
       await teamOrderService.decrementStockFromTeamOrder(teamOrderId);
       await teamOrderService.updateTeamOrderStatus(teamOrderId, 'payée');
+      const paidTeamOrder = await teamOrderService.getTeamOrderById(teamOrderId);
+await notificationService.notifyNewTeamOrder(paidTeamOrder);
+
 
 try {
   await customerService.registerCustomerActivity({
