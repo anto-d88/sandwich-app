@@ -5,7 +5,20 @@ const customerService = require('../services/customerService');
 
 const FORMULE_PRICE = 7.50;
 const MAX_TEAM_ORDERS_PER_SLOT = 3;
-const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+const DELIVERY_SLOTS = [
+  {
+    label: "11h",
+    value: "11h",
+    hour: 11,
+    minute: 0,
+  },
+  {
+    label: "12h30",
+    value: "12h30",
+    hour: 12,
+    minute: 30,
+  },
+];
 
 function getParisNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));

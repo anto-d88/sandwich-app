@@ -5,7 +5,20 @@ const orderService = require('../services/orderService');
 const SHOP_OPEN = true;
 
 const MAX_ORDERS_PER_SLOT = 10;
-const DELIVERY_SLOTS = ['11:00', '13:00', '15:00'];
+const DELIVERY_SLOTS = [
+  {
+    label: "11h",
+    value: "11h",
+    hour: 11,
+    minute: 0,
+  },
+  {
+    label: "12h30",
+    value: "12h30",
+    hour: 12,
+    minute: 30,
+  },
+];
 
 function getParisNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
