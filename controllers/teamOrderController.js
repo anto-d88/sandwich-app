@@ -36,7 +36,8 @@ function createSlotDate(slotTime, dayOffset = 0) {
 function isTodaySlotClosed(slotTime) {
   const now = getParisNow();
   const slotDate = createSlotDate(slotTime, 0);
-  const cutoffDate = new Date(slotDate.getTime() - 50 * 60 * 1000);
+  const cutoffMinutes = slotTime === "12:30" ? 90 : 50;
+const cutoffDate = new Date(slotDate.getTime() - cutoffMinutes * 60 * 1000);
 
   return now >= cutoffDate;
 }
