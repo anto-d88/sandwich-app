@@ -2,18 +2,22 @@ const getCartTotal = require("../utils/getCartTotal");
 const orderService = require("../services/orderService");
 const stripeService = require("../services/stripeService");
 const customerService = require("../services/customerService");
+const adminService = require("../services/adminService");
 const { sendOrderConfirmationEmail } = require("../services/emailService");
 
 const MAX_ORDERS_PER_SLOT = 10;
-const DELIVERY_SLOTS = ["11:00", "12:30"];
-const SHOP_OPEN = true;
 
 function getParisNow() {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }));
 }
 
+function normalizeSlotTime(slotTime) {
+  return String(slotTime).slice(0, 5);
+}
+
 function formatHour(slotTime) {
-  return slotTime.replace(":00", "h");
+  const clean = normalizeSlotTime(slotTime);
+  return clean.replace(":00", "h").replace(":", "h");
 }
 
 function getDateKey(date) {
@@ -25,7 +29,8 @@ function getDateKey(date) {
 
 function createSlotDate(slotTime, dayOffset = 0) {
   const now = getParisNow();
-  const [hours, minutes] = slotTime.split(":").map(Number);
+  const cleanSlotTime = normalizeSlotTime(slotTime);
+  const [hours, minutes] = cleanSlotTime.split(":").map(Number);
 
   const slotDate = new Date(now);
   slotDate.setDate(slotDate.getDate() + dayOffset);
@@ -34,27 +39,38 @@ function createSlotDate(slotTime, dayOffset = 0) {
   return slotDate;
 }
 
-function isTodaySlotClosed(slotTime) {
+function isTodaySlotClosed(slotTime, slotType) {
   const now = getParisNow();
   const slotDate = createSlotDate(slotTime, 0);
-  const cutoffMinutes = slotTime === "12:30" ? 90 : 50;
-const cutoffDate = new Date(slotDate.getTime() - cutoffMinutes * 60 * 1000);
+
+  let cutoffMinutes = 50;
+
+  if (slotType === "lunch" && normalizeSlotTime(slotTime) === "12:30") {
+    cutoffMinutes = 90;
+  }
+
+  if (slotType === "breakfast") {
+    cutoffMinutes = 12 * 60; // Petit-déj : à commander la veille
+  }
+
+  const cutoffDate = new Date(slotDate.getTime() - cutoffMinutes * 60 * 1000);
 
   return now >= cutoffDate;
 }
 
-function getEffectiveSlot(slotTime) {
-  const closedToday = isTodaySlotClosed(slotTime);
+function getEffectiveSlot(slotTime, slotType) {
+  const cleanSlotTime = normalizeSlotTime(slotTime);
+  const closedToday = isTodaySlotClosed(cleanSlotTime, slotType);
   const dayOffset = closedToday ? 1 : 0;
-  const slotDate = createSlotDate(slotTime, dayOffset);
+  const slotDate = createSlotDate(cleanSlotTime, dayOffset);
 
   const dayLabel = dayOffset === 0 ? "Aujourd’hui" : "Demain";
-  const hourLabel = formatHour(slotTime);
+  const hourLabel = formatHour(cleanSlotTime);
   const label = `${dayLabel} ${hourLabel}`;
-  const value = `${getDateKey(slotDate)}|${slotTime}`;
+  const value = `${getDateKey(slotDate)}|${cleanSlotTime}`;
 
   return {
-    time: slotTime,
+    time: cleanSlotTime,
     value,
     label,
     dayLabel,
@@ -64,16 +80,46 @@ function getEffectiveSlot(slotTime) {
   };
 }
 
-async function getSlotsWithAvailability() {
+function isBreakfastItem(item) {
+  const category = String(item.category || "").toLowerCase();
+  const name = String(item.name || "").toLowerCase();
+
+  return (
+    category === "breakfast" ||
+    category === "petit_dejeuner" ||
+    category === "petit-dejeuner" ||
+    name.includes("petit-déjeuner") ||
+    name.includes("petit dejeuner") ||
+    name.includes("croissant") ||
+    name.includes("pain au chocolat") ||
+    name.includes("viennoiserie")
+  );
+}
+
+function getCartSlotType(cart) {
+  const hasBreakfast = cart.some(isBreakfastItem);
+  return hasBreakfast ? "breakfast" : "lunch";
+}
+
+async function getSlotsWithAvailability(slotType) {
+  const allSlots = await adminService.getDeliverySlots();
+
+  const activeSlots = allSlots.filter(slot => {
+    return slot.slot_type === slotType && slot.active === true;
+  });
+
   const slots = [];
 
-  for (const slotTime of DELIVERY_SLOTS) {
-    const effectiveSlot = getEffectiveSlot(slotTime);
+  for (const slot of activeSlots) {
+    const slotTime = normalizeSlotTime(slot.slot_time);
+    const effectiveSlot = getEffectiveSlot(slotTime, slotType);
     const count = await orderService.countOrdersBySlot(effectiveSlot.value);
     const isFull = count >= MAX_ORDERS_PER_SLOT;
 
     slots.push({
       ...effectiveSlot,
+      id: slot.id,
+      slotType,
       count,
       max: MAX_ORDERS_PER_SLOT,
       isFull,
@@ -93,14 +139,22 @@ exports.getCheckoutPage = async (req, res) => {
       return res.redirect("/cart");
     }
 
+    const settings = await adminService.getSettingsMap();
+
+    if (settings.app_open === "false") {
+      return res.redirect("/menu");
+    }
+
+    const slotType = getCartSlotType(cart);
     const total = getCartTotal(cart);
-    const slots = await getSlotsWithAvailability();
+    const slots = await getSlotsWithAvailability(slotType);
 
     res.render("checkout", {
       title: "Finaliser la commande",
       cart,
       total,
       slots,
+      slotType,
       error: null,
       old: {},
     });
@@ -111,16 +165,20 @@ exports.getCheckoutPage = async (req, res) => {
 };
 
 exports.createCheckoutSession = async (req, res) => {
-  if (!SHOP_OPEN) {
-    return res.redirect("/checkout");
-  }
-
   try {
     const cart = req.session.cart || [];
 
     if (!cart.length) {
       return res.redirect("/cart");
     }
+
+    const settings = await adminService.getSettingsMap();
+
+    if (settings.app_open === "false") {
+      return res.redirect("/menu");
+    }
+
+    const slotType = getCartSlotType(cart);
 
     const {
       customer_name,
@@ -131,7 +189,7 @@ exports.createCheckoutSession = async (req, res) => {
       delivery_slot,
     } = req.body;
 
-    const slots = await getSlotsWithAvailability();
+    const slots = await getSlotsWithAvailability(slotType);
     const selectedSlot = slots.find((slot) => slot.value === delivery_slot);
     const total = getCartTotal(cart);
 
@@ -141,6 +199,7 @@ exports.createCheckoutSession = async (req, res) => {
         cart,
         total,
         slots,
+        slotType,
         error: "Créneau invalide. Merci de choisir un créneau disponible.",
         old: req.body,
       });
@@ -152,6 +211,7 @@ exports.createCheckoutSession = async (req, res) => {
         cart,
         total,
         slots,
+        slotType,
         error: `Le créneau ${selectedSlot.label} est complet. Merci de choisir une autre heure.`,
         old: req.body,
       });
@@ -183,9 +243,6 @@ exports.createCheckoutSession = async (req, res) => {
 
 exports.handlePaymentSuccess = async (req, res) => {
   try {
-    console.log("🔥 SUCCESS CALLBACK TRIGGERED");
-    console.log("SESSION ID:", req.query.session_id);
-
     const sessionId = req.query.session_id;
 
     if (!sessionId) {
@@ -240,29 +297,22 @@ exports.handlePaymentSuccess = async (req, res) => {
         notes: "Commande individuelle payée",
       });
     } catch (customerError) {
-      console.error(
-        "Erreur enregistrement client, commande confirmée quand même :",
-        customerError
-      );
+      console.error("Erreur enregistrement client, commande confirmée quand même :", customerError);
     }
 
-    // ✅ ENVOI MAIL AUTOMATIQUE
     try {
       await sendOrderConfirmationEmail({
-  customer_name: pendingOrder.customer_name,
-  customer_email: pendingOrder.customer_email,
-  customer_phone: pendingOrder.customer_phone,
-  company: pendingOrder.company_name,
-  delivery_address: pendingOrder.delivery_address,
-  delivery_slot: pendingOrder.delivery_slot_label,
-  total_amount: getCartTotal(cart),
-});
+        customer_name: pendingOrder.customer_name,
+        customer_email: pendingOrder.customer_email,
+        customer_phone: pendingOrder.customer_phone,
+        company: pendingOrder.company_name,
+        delivery_address: pendingOrder.delivery_address,
+        delivery_slot: pendingOrder.delivery_slot_label,
+        total_amount: getCartTotal(cart),
+      });
       console.log("✅ Mail de confirmation envoyé");
     } catch (emailError) {
-      console.error(
-        "Erreur envoi mail, commande confirmée quand même :",
-        emailError
-      );
+      console.error("Erreur envoi mail, commande confirmée quand même :", emailError);
     }
 
     req.session.cart = [];
@@ -286,21 +336,14 @@ exports.handlePaymentCancel = (req, res) => {
 
 exports.testEmail = async (req, res) => {
   try {
-    const fakeStripeSession = {
-      customer_details: {
-        email: "TON_EMAIL_ICI@gmail.com",
-      },
-      metadata: {
-        customer_name: "Antonio",
-        customer_email: "TON_EMAIL_ICI@gmail.com",
-        company_name: "Lixem",
-        delivery_address: "3 allée de la marque Wasquehal",
-        delivery_slot: "Aujourd’hui 13h",
-      },
-      amount_total: 1650,
-    };
-
-    await sendOrderConfirmationEmail(fakeStripeSession);
+    await sendOrderConfirmationEmail({
+      customer_name: "Antonio",
+      customer_email: "TON_EMAIL_ICI@gmail.com",
+      company: "Lixem",
+      delivery_address: "3 allée de la marque Wasquehal",
+      delivery_slot: "Aujourd’hui 11h",
+      total_amount: 16.5,
+    });
 
     return res.send("✅ Mail test envoyé");
   } catch (error) {

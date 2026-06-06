@@ -5,6 +5,9 @@ const authAdmin = require('../middleware/authAdmin');
 
 router.get('/dashboard', authAdmin, adminController.getDashboard);
 
+router.post('/settings/toggle', authAdmin, adminController.toggleSetting);
+router.post('/delivery-slots/:id/toggle', authAdmin, adminController.toggleDeliverySlot);
+
 router.get('/orders', authAdmin, adminController.getOrders);
 router.get('/orders/:id', authAdmin, adminController.getOrderDetails);
 router.post('/orders/:id/status', authAdmin, adminController.updateOrderStatus);

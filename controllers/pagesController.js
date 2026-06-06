@@ -1,4 +1,5 @@
 const productService = require('../services/productService');
+const adminService = require('../services/adminService');
 
 exports.getHomePage = (req, res) => {
   res.render('accueil', {
@@ -8,11 +9,24 @@ exports.getHomePage = (req, res) => {
 
 exports.getMenuPage = async (req, res) => {
   try {
-    const products = await productService.getAllAvailableProducts();
+    const settings = await adminService.getSettingsMap();
+
+    if (settings.app_open === 'false') {
+      return res.render('menu', {
+        title: 'Menu',
+        products: [],
+        settings,
+        appClosed: true
+      });
+    }
+
+    const products = await productService.getAllAvailableProducts(settings);
 
     res.render('menu', {
       title: 'Menu',
-      products
+      products,
+      settings,
+      appClosed: false
     });
   } catch (error) {
     console.error('Erreur getMenuPage:', error);
@@ -22,6 +36,12 @@ exports.getMenuPage = async (req, res) => {
 
 exports.getProductPage = async (req, res) => {
   try {
+    const settings = await adminService.getSettingsMap();
+
+    if (settings.app_open === 'false') {
+      return res.redirect('/menu');
+    }
+
     const productId = Number(req.params.id);
     const product = await productService.getProductById(productId);
 

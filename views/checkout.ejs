@@ -11,9 +11,17 @@
       <span class="section-badge">Paiement</span>
       <h1>Finaliser la commande</h1>
       <p>Renseignez vos informations pour lancer le paiement sécurisé.</p>
+
       <p>
-        Créneaux proposés : <strong>11h et 12h30</strong>.
-        Quand un créneau du jour est fermé, il est automatiquement proposé pour demain.
+        <% if (typeof slotType !== 'undefined' && slotType === 'breakfast') { %>
+          Créneaux petit-déjeuner proposés :
+          <strong>8h, 9h, 10h et 11h</strong>.
+          Les commandes petit-déjeuner sont prévues à l’avance.
+        <% } else { %>
+          Créneaux déjeuner proposés :
+          <strong>11h et 12h30</strong>.
+          Quand un créneau du jour est fermé, il est automatiquement proposé pour demain.
+        <% } %>
       </p>
     </section>
 
@@ -124,34 +132,42 @@
     <section class="checkout-box" style="margin-top: 24px;">
       <h2>Disponibilité des créneaux</h2>
 
-      <div class="slot-list">
-        <% slots.forEach(slot => { %>
-          <div class="slot-item <%= slot.isUnavailable ? 'slot-item--full' : '' %>">
-            <div>
-              <strong><%= slot.label %></strong>
+      <% if (!slots.length) { %>
+        <p>Aucun créneau disponible pour le moment.</p>
+      <% } else { %>
+        <div class="slot-list">
+          <% slots.forEach(slot => { %>
+            <div class="slot-item <%= slot.isUnavailable ? 'slot-item--full' : '' %>">
+              <div>
+                <strong><%= slot.label %></strong>
 
-              <p>
-                <% if (slot.isFull) { %>
-                  Complet
-                <% } else { %>
-                  Commande ouverte
-                <% } %>
-              </p>
+                <p>
+                  <% if (slot.isFull) { %>
+                    Complet
+                  <% } else { %>
+                    Commande ouverte
+                  <% } %>
+                </p>
+              </div>
+
+              <% if (slot.isFull) { %>
+                <span class="status-badge status-nouvelle">Complet</span>
+              <% } else if (slot.isTomorrow) { %>
+                <span class="status-badge status-en-preparation">Prévoir demain</span>
+              <% } else { %>
+                <span class="status-badge status-payee">Disponible</span>
+              <% } %>
             </div>
-
-            <% if (slot.isFull) { %>
-              <span class="status-badge status-nouvelle">Complet</span>
-            <% } else if (slot.isTomorrow) { %>
-              <span class="status-badge status-en-preparation">Prévoir demain</span>
-            <% } else { %>
-              <span class="status-badge status-payee">Disponible</span>
-            <% } %>
-          </div>
-        <% }) %>
-      </div>
+          <% }) %>
+        </div>
+      <% } %>
 
       <p style="margin-top:16px; color:#6b7280;">
-        Exemple : si le créneau de 11h est fermé aujourd’hui, il devient automatiquement disponible pour demain 11h.
+        <% if (typeof slotType !== 'undefined' && slotType === 'breakfast') { %>
+          Les petits-déjeuners sont pensés pour les équipes, réunions, formations et prises de poste du matin.
+        <% } else { %>
+          Exemple : si le créneau de 11h est fermé aujourd’hui, il devient automatiquement disponible pour demain 11h.
+        <% } %>
       </p>
     </section>
   </main>

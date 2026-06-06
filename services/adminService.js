@@ -6,10 +6,7 @@ async function getAllOrders() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data || [];
 }
 
@@ -20,9 +17,7 @@ async function getOrderWithItems(orderId) {
     .eq('id', orderId)
     .single();
 
-  if (orderError) {
-    throw orderError;
-  }
+  if (orderError) throw orderError;
 
   const { data: items, error: itemsError } = await supabase
     .from('order_items')
@@ -30,9 +25,7 @@ async function getOrderWithItems(orderId) {
     .eq('order_id', orderId)
     .order('id', { ascending: true });
 
-  if (itemsError) {
-    throw itemsError;
-  }
+  if (itemsError) throw itemsError;
 
   return {
     ...order,
@@ -48,10 +41,7 @@ async function updateOrderStatus(orderId, status) {
     .select()
     .single();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data;
 }
 
@@ -61,10 +51,7 @@ async function getAllTeamOrders() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data || [];
 }
 
@@ -75,9 +62,7 @@ async function getTeamOrderWithItems(teamOrderId) {
     .eq('id', teamOrderId)
     .single();
 
-  if (teamOrderError) {
-    throw teamOrderError;
-  }
+  if (teamOrderError) throw teamOrderError;
 
   const { data: items, error: itemsError } = await supabase
     .from('team_order_items')
@@ -85,9 +70,7 @@ async function getTeamOrderWithItems(teamOrderId) {
     .eq('team_order_id', teamOrderId)
     .order('id', { ascending: true });
 
-  if (itemsError) {
-    throw itemsError;
-  }
+  if (itemsError) throw itemsError;
 
   return {
     ...teamOrder,
@@ -103,13 +86,9 @@ async function updateTeamOrderStatus(teamOrderId, status) {
     .select()
     .single();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data;
 }
-
 
 async function getRecentOrders(limit = 5) {
   const { data, error } = await supabase
@@ -153,6 +132,84 @@ async function countOpenTeamOrders() {
   return count || 0;
 }
 
+async function getSettingsMap() {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*');
+
+  if (error) throw error;
+
+  const settings = {};
+
+  (data || []).forEach(setting => {
+    settings[setting.key] = setting.value;
+  });
+
+  return settings;
+}
+
+async function toggleSetting(key) {
+  const { data: setting, error: selectError } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('key', key)
+    .single();
+
+  if (selectError) throw selectError;
+
+  const currentValue = setting.value;
+  const nextValue = currentValue === 'true' ? 'false' : 'true';
+
+  const { data, error } = await supabase
+    .from('settings')
+    .update({
+      value: nextValue,
+      updated_at: new Date().toISOString()
+    })
+    .eq('key', key)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
+async function getDeliverySlots() {
+  const { data, error } = await supabase
+    .from('delivery_slots')
+    .select('*')
+    .order('display_order', { ascending: true })
+    .order('slot_time', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function toggleDeliverySlot(slotId) {
+  const { data: slot, error: selectError } = await supabase
+    .from('delivery_slots')
+    .select('*')
+    .eq('id', slotId)
+    .single();
+
+  if (selectError) throw selectError;
+
+  const { data, error } = await supabase
+    .from('delivery_slots')
+    .update({
+      active: !slot.active,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', slotId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
 module.exports = {
   getAllOrders,
   getOrderWithItems,
@@ -163,5 +220,9 @@ module.exports = {
   getRecentOrders,
   getRecentTeamOrders,
   countNewOrders,
-  countOpenTeamOrders
+  countOpenTeamOrders,
+  getSettingsMap,
+  toggleSetting,
+  getDeliverySlots,
+  toggleDeliverySlot
 };

@@ -6,16 +6,50 @@ exports.getDashboard = async (req, res) => {
     const recentTeamOrders = await adminService.getRecentTeamOrders(5);
     const newOrdersCount = await adminService.countNewOrders();
     const openTeamOrdersCount = await adminService.countOpenTeamOrders();
+    const settings = await adminService.getSettingsMap();
+    const deliverySlots = await adminService.getDeliverySlots();
 
     res.render('admin/dashboard', {
       title: 'Dashboard admin',
       recentOrders,
       recentTeamOrders,
       newOrdersCount,
-      openTeamOrdersCount
+      openTeamOrdersCount,
+      settings,
+      deliverySlots
     });
   } catch (error) {
     console.error('Erreur getDashboard:', error);
+    res.status(500).send('Erreur serveur');
+  }
+};
+
+exports.toggleSetting = async (req, res) => {
+  try {
+    const { key } = req.body;
+
+    if (!key) {
+      return res.redirect('/admin/dashboard');
+    }
+
+    await adminService.toggleSetting(key);
+
+    res.redirect('/admin/dashboard');
+  } catch (error) {
+    console.error('Erreur toggleSetting:', error);
+    res.status(500).send('Erreur serveur');
+  }
+};
+
+exports.toggleDeliverySlot = async (req, res) => {
+  try {
+    const slotId = Number(req.params.id);
+
+    await adminService.toggleDeliverySlot(slotId);
+
+    res.redirect('/admin/dashboard');
+  } catch (error) {
+    console.error('Erreur toggleDeliverySlot:', error);
     res.status(500).send('Erreur serveur');
   }
 };

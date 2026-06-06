@@ -29,6 +29,115 @@
       </article>
     </section>
 
+    <section class="admin-order-card" style="margin-top: 24px;">
+      <h2>Centre de contrôle</h2>
+      <p>Ouvre ou ferme l’application, les catégories et les créneaux sans toucher au code.</p>
+
+      <div class="admin-orders-grid" style="margin-top: 16px;">
+        <article class="admin-alert-card">
+  <h3>Application</h3>
+
+  <p>
+    Statut :
+    <% if (settings.app_open === 'true') { %>
+      <strong style="color:#15803d;">ouverte</strong>
+    <% } else { %>
+      <strong style="color:#b91c1c;">fermée</strong>
+    <% } %>
+  </p>
+
+  <form action="/admin/settings/toggle" method="POST">
+    <input type="hidden" name="key" value="app_open">
+
+    <% if (settings.app_open === 'true') { %>
+      <button type="submit" class="btn btn-danger">
+        Fermer l’application
+      </button>
+    <% } else { %>
+      <button type="submit" class="btn btn-primary">
+        Ouvrir l’application
+      </button>
+    <% } %>
+  </form>
+</article>
+
+        <article class="admin-alert-card">
+          <h3>Catégories</h3>
+
+          <% const categories = [
+            { key: 'sandwiches_open', label: 'Sandwichs' },
+            { key: 'salads_open', label: 'Bowls / Salades' },
+            { key: 'drinks_open', label: 'Boissons' },
+            { key: 'desserts_open', label: 'Desserts' },
+            { key: 'breakfast_open', label: 'Petit-déjeuner' }
+          ]; %>
+
+          <% categories.forEach(category => { %>
+            <div class="checkout-item">
+              <div>
+                <strong><%= category.label %></strong><br>
+                <span>
+                  <%= settings[category.key] === 'true' ? '🟢 Ouvert' : '🔴 Fermé' %>
+                </span>
+              </div>
+
+              <form action="/admin/settings/toggle" method="POST">
+                <input type="hidden" name="key" value="<%= category.key %>">
+                <button type="submit" class="btn <%= settings[category.key] === 'true' ? 'btn-danger' : 'btn-primary' %>">
+                  <%= settings[category.key] === 'true' ? 'Fermer' : 'Ouvrir' %>
+                </button>
+              </form>
+            </div>
+          <% }) %>
+        </article>
+      </div>
+    </section>
+
+    <section class="admin-order-card" style="margin-top: 24px;">
+      <h2>Créneaux de livraison</h2>
+      <p>Créneaux petit-déjeuner : 08h00, 09h00, 10h00, 11h00. Créneaux déjeuner : 11h00, 12h30.</p>
+
+      <div class="admin-orders-grid" style="margin-top: 16px;">
+        <article class="admin-alert-card">
+          <h3>Petit-déjeuner</h3>
+
+          <% deliverySlots.filter(slot => slot.slot_type === 'breakfast').forEach(slot => { %>
+            <div class="checkout-item">
+              <div>
+                <strong><%= slot.label %></strong><br>
+                <span><%= slot.active ? '🟢 Actif' : '🔴 Fermé' %></span>
+              </div>
+
+              <form action="/admin/delivery-slots/<%= slot.id %>/toggle" method="POST">
+                <button type="submit" class="btn <%= slot.active ? 'btn-danger' : 'btn-primary' %>">
+                  <%= slot.active ? 'Fermer' : 'Ouvrir' %>
+                </button>
+              </form>
+            </div>
+          <% }) %>
+        </article>
+
+        <article class="admin-alert-card">
+          <h3>Déjeuner</h3>
+
+          <% deliverySlots.filter(slot => slot.slot_type === 'lunch').forEach(slot => { %>
+            <div class="checkout-item">
+              <div>
+                <strong><%= slot.label %></strong><br>
+                <span><%= slot.active ? '🟢 Actif' : '🔴 Fermé' %></span>
+              </div>
+
+              <form action="/admin/delivery-slots/<%= slot.id %>/toggle" method="POST">
+                <button type="submit" class="btn <%= slot.active ? 'btn-danger' : 'btn-primary' %>">
+                  <%= slot.active ? 'Fermer' : 'Ouvrir' %>
+                </button>
+              </form>
+            </div>
+          <% }) %>
+        </article>
+      </div>
+    </section>
+
     <section class="admin-orders-grid" style="margin-top: 24px;">
       <article class="admin-order-card">
         <h2>Commandes simples récentes</h2>

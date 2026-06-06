@@ -410,7 +410,10 @@ exports.handleTeamOrderPaymentSuccess = async (req, res) => {
       } catch (notifyError) {
         console.error('Erreur notification Telegram équipe :', notifyError);
       }
-
+console.log("TEST TELEGRAM AVANT ENVOI");
+console.log("TELEGRAM_BOT_TOKEN présent :", !!process.env.TELEGRAM_BOT_TOKEN);
+console.log("TELEGRAM_CHAT_ID présent :", !!process.env.TELEGRAM_CHAT_ID);
+console.log("paidTeamOrder :", paidTeamOrder);
       try {
         await customerService.registerCustomerActivity({
           full_name: teamOrder.contact_name,
