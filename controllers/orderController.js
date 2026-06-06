@@ -190,6 +190,12 @@ exports.createCheckoutSession = async (req, res) => {
     } = req.body;
 
     const slots = await getSlotsWithAvailability(slotType);
+    console.log("DELIVERY SLOT RECU :", delivery_slot);
+
+console.log(
+  "SLOTS DISPONIBLES :",
+  slots.map(s => s.value)
+);
     const selectedSlot = slots.find((slot) => slot.value === delivery_slot);
     const total = getCartTotal(cart);
 
