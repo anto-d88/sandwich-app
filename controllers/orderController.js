@@ -12,7 +12,15 @@ function getParisNow() {
 }
 
 function normalizeSlotTime(slotTime) {
-  return String(slotTime).slice(0, 5);
+  if (!slotTime) return "";
+
+  const value = String(slotTime);
+
+  if (value.includes("T")) {
+    return value.split("T")[1].slice(0, 5);
+  }
+
+  return value.slice(0, 5);
 }
 
 function formatHour(slotTime) {
@@ -196,6 +204,8 @@ console.log(
   "SLOTS DISPONIBLES :",
   slots.map(s => s.value)
 );
+console.log("DELIVERY SLOT RECU :", delivery_slot);
+console.log("SLOTS DISPONIBLES :", slots.map(s => s.value));
     const selectedSlot = slots.find((slot) => slot.value === delivery_slot);
     const total = getCartTotal(cart);
 
