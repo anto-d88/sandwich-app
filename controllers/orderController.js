@@ -111,7 +111,8 @@ function getCartSlotType(cart) {
 
 async function getSlotsWithAvailability(slotType) {
   const allSlots = await adminService.getDeliverySlots();
-
+console.log("SLOT TYPE DEMANDE :", slotType);
+console.log("ALL DELIVERY SLOTS :", allSlots);
   const activeSlots = allSlots.filter(slot => {
     return slot.slot_type === slotType && slot.active === true;
   });
