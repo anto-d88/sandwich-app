@@ -74,6 +74,29 @@ function calculateBreakfastCustomPrice({
   );
 }
 
+function isBreakfastProduct(product) {
+  const category = String(product.category || '').toLowerCase();
+  return category === 'breakfast';
+}
+
+function getBreakfastDeliveryLabel(dateValue, timeValue) {
+  if (!dateValue || !timeValue) return null;
+
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  const formattedDate = date.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const formattedTime = String(timeValue).replace(':00', 'h');
+
+  return `${formattedDate} à ${formattedTime}`;
+}
+
 exports.getCartPage = (req, res) => {
   const cart = req.session.cart || [];
   const total = getCartTotal(cart);
@@ -114,6 +137,18 @@ exports.addToCart = async (req, res) => {
 
     let finalPrice = Number(product.price);
     let finalName = product.name;
+    let description = product.description || null;
+
+    const breakfastDeliveryDate = req.body.breakfast_delivery_date || null;
+    const breakfastDeliveryTime = req.body.breakfast_delivery_time || null;
+    const breakfastDeliveryLabel = getBreakfastDeliveryLabel(
+      breakfastDeliveryDate,
+      breakfastDeliveryTime
+    );
+
+    if (isBreakfastProduct(product) && (!breakfastDeliveryDate || !breakfastDeliveryTime)) {
+      return res.send('Merci de choisir une date et un créneau de livraison pour le petit-déjeuner.');
+    }
 
     if (product.category === 'sandwich') {
       const sandwichOptions = buildSandwichOptions(product, req.body);
@@ -125,7 +160,9 @@ exports.addToCart = async (req, res) => {
       return (
         String(item.id) === String(product.id) &&
         item.name === finalName &&
-        Number(item.price) === Number(finalPrice)
+        Number(item.price) === Number(finalPrice) &&
+        String(item.delivery_date || '') === String(breakfastDeliveryDate || '') &&
+        String(item.delivery_time || '') === String(breakfastDeliveryTime || '')
       );
     });
 
@@ -140,11 +177,16 @@ exports.addToCart = async (req, res) => {
     } else {
       cart.push({
         id: product.id,
+        product_id: product.id,
         name: finalName,
         price: finalPrice,
         quantity,
         category: product.category || null,
-        is_custom: false
+        is_custom: false,
+        description,
+        delivery_date: breakfastDeliveryDate,
+        delivery_time: breakfastDeliveryTime,
+        delivery_label: breakfastDeliveryLabel
       });
     }
 
@@ -164,6 +206,14 @@ exports.addBreakfastCustomToCart = async (req, res) => {
     const cafes = safePositiveNumber(req.body.cafes, 0);
     const thes = safePositiveNumber(req.body.thes, 0);
     const jusOrange = safePositiveNumber(req.body.jus_orange, 0);
+
+    const deliveryDate = req.body.delivery_date;
+    const deliveryTime = req.body.delivery_time;
+    const deliveryLabel = getBreakfastDeliveryLabel(deliveryDate, deliveryTime);
+
+    if (!deliveryDate || !deliveryTime) {
+      return res.send('Merci de choisir une date et un créneau.');
+    }
 
     if (peopleCount < 5) {
       return res.send('La formule personnalisée commence à partir de 5 personnes.');
@@ -189,7 +239,7 @@ exports.addBreakfastCustomToCart = async (req, res) => {
       painsChocolat > 0 ? `${painsChocolat} pain(s) au chocolat` : null,
       cafes > 0 ? `${cafes} café(s)` : null,
       thes > 0 ? `${thes} thé(s)` : null,
-      jusOrange > 0 ? `${jusOrange} jus d’orange` : null
+      jusOrange > 0 ? `${jusOrange} jus d'orange` : null
     ].filter(Boolean);
 
     const cart = req.session.cart || [];
@@ -197,18 +247,24 @@ exports.addBreakfastCustomToCart = async (req, res) => {
     cart.push({
       id: `breakfast-custom-${Date.now()}`,
       product_id: null,
-      name: `Formule petit-déjeuner personnalisée (${details.join(', ')})`,
+      name: 'Formule petit-déjeuner personnalisée',
       price,
       quantity: 1,
       category: 'breakfast',
       is_custom: true,
+      description: details.join(' • '),
+      delivery_date: deliveryDate,
+      delivery_time: deliveryTime,
+      delivery_label: deliveryLabel,
       breakfast_details: {
         people_count: peopleCount,
         croissants,
         pains_chocolat: painsChocolat,
         cafes,
         thes,
-        jus_orange: jusOrange
+        jus_orange: jusOrange,
+        delivery_date: deliveryDate,
+        delivery_time: deliveryTime
       }
     });
 

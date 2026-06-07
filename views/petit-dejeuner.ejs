@@ -20,10 +20,21 @@
       </p>
     </section>
 
+    <section class="team-error-box" style="margin-top:18px;">
+      <h2>📅 Règle de commande</h2>
+      <p>
+        Les petits-déjeuners doivent être commandés au plus tard
+        <strong>la veille avant 16h</strong>.
+      </p>
+      <p>
+        Si la limite est dépassée, la première date disponible sera automatiquement décalée.
+      </p>
+    </section>
+
     <section class="menu-top-banner">
       <div>
         <strong>Offre pensée pour les entreprises</strong>
-        <p>Choisissez une formule prête ou composez votre propre petit-déjeuner.</p>
+        <p>Choisissez une date, un créneau, puis une formule prête ou personnalisée.</p>
       </div>
 
       <div>
@@ -31,8 +42,31 @@
       </div>
     </section>
 
+    <section class="checkout-box" style="margin-top: 24px;">
+      <h2>1. Choisir la livraison</h2>
+
+      <div class="checkout-form">
+        <label>
+          Date de livraison
+          <input type="date" id="breakfastDeliveryDate" required>
+        </label>
+
+        <label>
+          Créneau de livraison
+          <select id="breakfastDeliveryTime" required>
+            <option value="08:00">08h00</option>
+            <option value="09:00">09h00</option>
+            <option value="10:00">10h00</option>
+            <option value="11:00">11h00</option>
+          </select>
+        </label>
+
+        <p id="breakfastDeliveryInfo" style="margin-top:12px; color:#15803d; font-weight:700;"></p>
+      </div>
+    </section>
+
     <section class="page-intro" style="margin-top: 34px;">
-      <h2>☀️ Formules suggérées</h2>
+      <h2>2. Formules suggérées</h2>
       <p>Le plus simple pour les RH, réunions et formations.</p>
     </section>
 
@@ -71,8 +105,11 @@
                     <%= Number(product.price).toFixed(2).replace('.', ',') %> €
                   </p>
 
-                  <form action="/cart/add" method="POST" class="product-form-inline">
+                  <form action="/cart/add" method="POST" class="product-form-inline breakfast-formula-form">
                     <input type="hidden" name="id" value="<%= product.id %>">
+                    <input type="hidden" name="breakfast_delivery_date" class="breakfast-delivery-date-input">
+                    <input type="hidden" name="breakfast_delivery_time" class="breakfast-delivery-time-input">
+
                     <input
                       type="number"
                       name="quantity"
@@ -81,6 +118,7 @@
                       max="<%= product.stock_quantity %>"
                       class="qty-input"
                     >
+
                     <button type="submit" class="btn btn-primary">Ajouter</button>
                   </form>
                 </div>
@@ -92,12 +130,15 @@
     </section>
 
     <section class="page-intro" style="margin-top: 42px;">
-      <h2>🧩 Composer une formule personnalisée</h2>
-      <p>Pour 5, 10, 20 personnes ou plus. Tu choisis les quantités.</p>
+      <h2>3. Composer une formule personnalisée</h2>
+      <p>Pour 5, 10, 20 personnes ou plus. Vous choisissez les quantités.</p>
     </section>
 
     <section class="checkout-box" style="margin-top: 18px;">
-      <form action="/cart/add-breakfast-custom" method="POST" class="checkout-form">
+      <form action="/cart/add-breakfast-custom" method="POST" class="checkout-form breakfast-custom-form">
+        <input type="hidden" name="delivery_date" class="breakfast-delivery-date-input">
+        <input type="hidden" name="delivery_time" class="breakfast-delivery-time-input">
+
         <label>
           Nombre de personnes
           <input type="number" name="people_count" value="10" min="5" required>
@@ -139,6 +180,97 @@
       </p>
     </section>
   </main>
+
+  <script>
+    function pad(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function toDateInputValue(date) {
+      return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate())
+      ].join('-');
+    }
+
+    function formatFrenchDate(dateValue) {
+      if (!dateValue) return '';
+
+      const [year, month, day] = dateValue.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+
+      return date.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    function getMinimumBreakfastDate() {
+      const now = new Date();
+      const minimumDate = new Date(now);
+
+      minimumDate.setDate(minimumDate.getDate() + 1);
+
+      const isAfterCutoff =
+        now.getHours() > 16 ||
+        (now.getHours() === 16 && now.getMinutes() >= 0);
+
+      if (isAfterCutoff) {
+        minimumDate.setDate(minimumDate.getDate() + 1);
+      }
+
+      return minimumDate;
+    }
+
+    const dateInput = document.getElementById('breakfastDeliveryDate');
+    const timeInput = document.getElementById('breakfastDeliveryTime');
+    const infoBox = document.getElementById('breakfastDeliveryInfo');
+    const hiddenDateInputs = document.querySelectorAll('.breakfast-delivery-date-input');
+    const hiddenTimeInputs = document.querySelectorAll('.breakfast-delivery-time-input');
+
+    function syncBreakfastDelivery() {
+      const selectedDate = dateInput.value;
+      const selectedTime = timeInput.value;
+
+      hiddenDateInputs.forEach(input => {
+        input.value = selectedDate;
+      });
+
+      hiddenTimeInputs.forEach(input => {
+        input.value = selectedTime;
+      });
+
+      if (selectedDate && selectedTime) {
+        const timeLabel = selectedTime.replace(':00', 'h');
+        infoBox.textContent = `Livraison prévue le ${formatFrenchDate(selectedDate)} à ${timeLabel}.`;
+      }
+    }
+
+    const minimumDate = getMinimumBreakfastDate();
+    const minimumValue = toDateInputValue(minimumDate);
+
+    dateInput.min = minimumValue;
+    dateInput.value = minimumValue;
+
+    syncBreakfastDelivery();
+
+    dateInput.addEventListener('change', syncBreakfastDelivery);
+    timeInput.addEventListener('change', syncBreakfastDelivery);
+
+    document.querySelectorAll('.breakfast-formula-form, .breakfast-custom-form').forEach(form => {
+      form.addEventListener('submit', (event) => {
+        syncBreakfastDelivery();
+
+        if (!dateInput.value || !timeInput.value) {
+          event.preventDefault();
+          alert('Merci de choisir une date et un créneau de livraison.');
+        }
+      });
+    });
+  </script>
 
   <%- include('partials/footer') %>
 </body>
