@@ -14,9 +14,9 @@
 
       <p>
         <% if (typeof slotType !== 'undefined' && slotType === 'breakfast') { %>
-          Créneaux petit-déjeuner proposés :
-          <strong>8h, 9h, 10h et 11h</strong>.
-          Les commandes petit-déjeuner sont prévues à l’avance.
+          Votre créneau petit-déjeuner a déjà été choisi.
+          Les commandes petit-déjeuner doivent être validées
+          <strong>la veille avant 16h</strong>.
         <% } else { %>
           Créneaux déjeuner proposés :
           <strong>11h et 12h30</strong>.
@@ -39,9 +39,22 @@
 
         <% cart.forEach(item => { %>
           <div class="checkout-item">
-            <p>
+            <div>
               <strong><%= item.name %></strong> x <%= item.quantity %>
-            </p>
+
+              <% if (item.description) { %>
+                <br>
+                <small style="color:#6b7280;"><%= item.description %></small>
+              <% } %>
+
+              <% if (item.delivery_label) { %>
+                <div style="margin-top:10px; padding:10px; background:#f0fdf4; border-radius:10px; border:1px solid #bbf7d0;">
+                  <strong>📅 Livraison prévue</strong>
+                  <div style="margin-top:4px;"><%= item.delivery_label %></div>
+                </div>
+              <% } %>
+            </div>
+
             <p>
               <%= (Number(item.price) * Number(item.quantity)).toFixed(2).replace('.', ',') %> €
             </p>
@@ -55,12 +68,22 @@
         </p>
 
         <p style="color:#16a34a; font-weight:700; margin-top:16px;">
-          ✔ Livraison incluse • Votre commande sera livrée sur le créneau choisi
+          ✔ Livraison incluse • Votre commande sera livrée sur le créneau prévu
         </p>
       </section>
 
       <section class="checkout-box">
         <h2>Informations de livraison</h2>
+
+        <% if (typeof slotType !== 'undefined' && slotType === 'breakfast' && breakfastDelivery) { %>
+          <section style="margin-bottom:18px; padding:14px; background:#f0fdf4; border-radius:12px; border:1px solid #bbf7d0;">
+            <strong>📅 Livraison petit-déjeuner</strong>
+            <p style="margin-top:6px;"><%= breakfastDelivery.deliveryLabel %></p>
+            <p style="margin-top:6px; color:#6b7280;">
+              Le créneau a été choisi sur la page petit-déjeuner.
+            </p>
+          </section>
+        <% } %>
 
         <form action="/order/create-checkout-session" method="POST" class="checkout-form">
           <input
@@ -102,74 +125,86 @@
             required
           >
 
-          <label>
-            Créneau de livraison
-            <select name="delivery_slot" required>
-              <option value="">Choisir un créneau</option>
+          <% if (typeof slotType !== 'undefined' && slotType !== 'breakfast') { %>
+            <label>
+              Créneau de livraison
+              <select name="delivery_slot" required>
+                <option value="">Choisir un créneau</option>
 
-              <% slots.forEach(slot => { %>
-                <option
-                  value="<%= slot.value %>"
-                  <%= typeof old !== 'undefined' && old.delivery_slot === slot.value ? 'selected' : '' %>
-                  <%= slot.isUnavailable ? 'disabled' : '' %>
-                >
-                  <%= slot.label %>
-                  <% if (slot.isFull) { %>
-                    — Complet
-                  <% } else { %>
-                    — Commande ouverte
-                  <% } %>
-                </option>
-              <% }) %>
-            </select>
-          </label>
+                <% slots.forEach(slot => { %>
+                  <option
+                    value="<%= slot.value %>"
+                    <%= typeof old !== 'undefined' && old.delivery_slot === slot.value ? 'selected' : '' %>
+                    <%= slot.isUnavailable ? 'disabled' : '' %>
+                  >
+                    <%= slot.label %>
+                    <% if (slot.isFull) { %>
+                      — Complet
+                    <% } else { %>
+                      — Commande ouverte
+                    <% } %>
+                  </option>
+                <% }) %>
+              </select>
+            </label>
+          <% } %>
 
           <button type="submit" class="btn btn-primary">Payer maintenant</button>
         </form>
       </section>
     </div>
 
-    <section class="checkout-box" style="margin-top: 24px;">
-      <h2>Disponibilité des créneaux</h2>
+    <% if (typeof slotType !== 'undefined' && slotType !== 'breakfast') { %>
+      <section class="checkout-box" style="margin-top: 24px;">
+        <h2>Disponibilité des créneaux</h2>
 
-      <% if (!slots.length) { %>
-        <p>Aucun créneau disponible pour le moment.</p>
-      <% } else { %>
-        <div class="slot-list">
-          <% slots.forEach(slot => { %>
-            <div class="slot-item <%= slot.isUnavailable ? 'slot-item--full' : '' %>">
-              <div>
-                <strong><%= slot.label %></strong>
-
-                <p>
-                  <% if (slot.isFull) { %>
-                    Complet
-                  <% } else { %>
-                    Commande ouverte
-                  <% } %>
-                </p>
-              </div>
-
-              <% if (slot.isFull) { %>
-                <span class="status-badge status-nouvelle">Complet</span>
-              <% } else if (slot.isTomorrow) { %>
-                <span class="status-badge status-en-preparation">Prévoir demain</span>
-              <% } else { %>
-                <span class="status-badge status-payee">Disponible</span>
-              <% } %>
-            </div>
-          <% }) %>
-        </div>
-      <% } %>
-
-      <p style="margin-top:16px; color:#6b7280;">
-        <% if (typeof slotType !== 'undefined' && slotType === 'breakfast') { %>
-          Les petits-déjeuners sont pensés pour les équipes, réunions, formations et prises de poste du matin.
+        <% if (!slots.length) { %>
+          <p>Aucun créneau disponible pour le moment.</p>
         <% } else { %>
-          Exemple : si le créneau de 11h est fermé aujourd’hui, il devient automatiquement disponible pour demain 11h.
+          <div class="slot-list">
+            <% slots.forEach(slot => { %>
+              <div class="slot-item <%= slot.isUnavailable ? 'slot-item--full' : '' %>">
+                <div>
+                  <strong><%= slot.label %></strong>
+
+                  <p>
+                    <% if (slot.isFull) { %>
+                      Complet
+                    <% } else { %>
+                      Commande ouverte
+                    <% } %>
+                  </p>
+                </div>
+
+                <% if (slot.isFull) { %>
+                  <span class="status-badge status-nouvelle">Complet</span>
+                <% } else if (slot.isTomorrow) { %>
+                  <span class="status-badge status-en-preparation">Prévoir demain</span>
+                <% } else { %>
+                  <span class="status-badge status-payee">Disponible</span>
+                <% } %>
+              </div>
+            <% }) %>
+          </div>
         <% } %>
-      </p>
-    </section>
+
+        <p style="margin-top:16px; color:#6b7280;">
+          Exemple : si le créneau de 11h est fermé aujourd’hui, il devient automatiquement disponible pour demain 11h.
+        </p>
+      </section>
+    <% } else { %>
+      <section class="checkout-box" style="margin-top: 24px;">
+        <h2>Rappel petit-déjeuner</h2>
+        <p>
+          Les petits-déjeuners sont pensés pour les équipes, réunions, formations
+          et prises de poste du matin.
+        </p>
+        <p style="margin-top:10px; color:#6b7280;">
+          Pour modifier la date ou le créneau, retournez sur la page petit-déjeuner
+          et ajoutez à nouveau votre formule.
+        </p>
+      </section>
+    <% } %>
   </main>
 
   <%- include('partials/footer') %>

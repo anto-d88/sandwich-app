@@ -8,7 +8,11 @@ const { sendOrderConfirmationEmail } = require("../services/emailService");
 const MAX_ORDERS_PER_SLOT = 10;
 
 function getParisNow() {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  return new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "Europe/Paris",
+    })
+  );
 }
 
 function normalizeSlotTime(slotTime) {
@@ -32,6 +36,7 @@ function getDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
+
   return `${year}-${month}-${day}`;
 }
 
@@ -55,10 +60,6 @@ function isTodaySlotClosed(slotTime, slotType) {
 
   if (slotType === "lunch" && normalizeSlotTime(slotTime) === "12:30") {
     cutoffMinutes = 90;
-  }
-
-  if (slotType === "breakfast") {
-    cutoffMinutes = 12 * 60; // Petit-déj : à commander la veille
   }
 
   const cutoffDate = new Date(slotDate.getTime() - cutoffMinutes * 60 * 1000);
@@ -109,11 +110,37 @@ function getCartSlotType(cart) {
   return hasBreakfast ? "breakfast" : "lunch";
 }
 
+function getBreakfastDeliveryFromCart(cart) {
+  const breakfastItem = cart.find((item) => {
+    return (
+      isBreakfastItem(item) &&
+      item.delivery_date &&
+      item.delivery_time
+    );
+  });
+
+  if (!breakfastItem) {
+    return null;
+  }
+
+  const deliveryDate = breakfastItem.delivery_date;
+  const deliveryTime = normalizeSlotTime(breakfastItem.delivery_time);
+  const deliverySlot = `${deliveryDate}|${deliveryTime}`;
+
+  return {
+    deliveryDate,
+    deliveryTime,
+    deliverySlot,
+    deliveryLabel:
+      breakfastItem.delivery_label ||
+      `Livraison petit-déjeuner ${deliveryDate} à ${formatHour(deliveryTime)}`,
+  };
+}
+
 async function getSlotsWithAvailability(slotType) {
   const allSlots = await adminService.getDeliverySlots();
-console.log("SLOT TYPE DEMANDE :", slotType);
-console.log("ALL DELIVERY SLOTS :", allSlots);
-  const activeSlots = allSlots.filter(slot => {
+
+  const activeSlots = allSlots.filter((slot) => {
     return slot.slot_type === slotType && slot.active === true;
   });
 
@@ -156,7 +183,8 @@ exports.getCheckoutPage = async (req, res) => {
 
     const slotType = getCartSlotType(cart);
     const total = getCartTotal(cart);
-    const slots = await getSlotsWithAvailability(slotType);
+    const breakfastDelivery = getBreakfastDeliveryFromCart(cart);
+    const slots = slotType === "breakfast" ? [] : await getSlotsWithAvailability(slotType);
 
     res.render("checkout", {
       title: "Finaliser la commande",
@@ -164,6 +192,7 @@ exports.getCheckoutPage = async (req, res) => {
       total,
       slots,
       slotType,
+      breakfastDelivery,
       error: null,
       old: {},
     });
@@ -188,6 +217,8 @@ exports.createCheckoutSession = async (req, res) => {
     }
 
     const slotType = getCartSlotType(cart);
+    const total = getCartTotal(cart);
+    const breakfastDelivery = getBreakfastDeliveryFromCart(cart);
 
     const {
       customer_name,
@@ -198,33 +229,60 @@ exports.createCheckoutSession = async (req, res) => {
       delivery_slot,
     } = req.body;
 
-    const slots = await getSlotsWithAvailability(slotType);
+    let finalDeliverySlot = null;
+    let finalDeliveryLabel = null;
+    let slots = [];
 
-    const selectedSlot = slots.find((slot) => slot.value === delivery_slot);
-    const total = getCartTotal(cart);
+    if (slotType === "breakfast") {
+      if (!breakfastDelivery) {
+        return res.status(400).render("checkout", {
+          title: "Finaliser la commande",
+          cart,
+          total,
+          slots: [],
+          slotType,
+          breakfastDelivery: null,
+          error:
+            "Date ou créneau petit-déjeuner manquant. Merci de retourner sur la page petit-déjeuner.",
+          old: req.body,
+        });
+      }
 
-    if (!selectedSlot) {
-      return res.status(400).render("checkout", {
-        title: "Finaliser la commande",
-        cart,
-        total,
-        slots,
-        slotType,
-        error: "Créneau invalide. Merci de choisir un créneau disponible.",
-        old: req.body,
-      });
-    }
+      finalDeliverySlot = breakfastDelivery.deliverySlot;
+      finalDeliveryLabel = breakfastDelivery.deliveryLabel;
+    } else {
+      slots = await getSlotsWithAvailability(slotType);
 
-    if (selectedSlot.isFull) {
-      return res.status(400).render("checkout", {
-        title: "Finaliser la commande",
-        cart,
-        total,
-        slots,
-        slotType,
-        error: `Le créneau ${selectedSlot.label} est complet. Merci de choisir une autre heure.`,
-        old: req.body,
-      });
+      const selectedSlot = slots.find((slot) => slot.value === delivery_slot);
+
+      if (!selectedSlot) {
+        return res.status(400).render("checkout", {
+          title: "Finaliser la commande",
+          cart,
+          total,
+          slots,
+          slotType,
+          breakfastDelivery: null,
+          error: "Créneau invalide. Merci de choisir un créneau disponible.",
+          old: req.body,
+        });
+      }
+
+      if (selectedSlot.isFull) {
+        return res.status(400).render("checkout", {
+          title: "Finaliser la commande",
+          cart,
+          total,
+          slots,
+          slotType,
+          breakfastDelivery: null,
+          error: `Le créneau ${selectedSlot.label} est complet. Merci de choisir une autre heure.`,
+          old: req.body,
+        });
+      }
+
+      finalDeliverySlot = selectedSlot.value;
+      finalDeliveryLabel = selectedSlot.label;
     }
 
     const customer = {
@@ -233,8 +291,8 @@ exports.createCheckoutSession = async (req, res) => {
       customer_email,
       company_name,
       delivery_address,
-      delivery_slot: selectedSlot.value,
-      delivery_slot_label: selectedSlot.label,
+      delivery_slot: finalDeliverySlot,
+      delivery_slot_label: finalDeliveryLabel,
     };
 
     req.session.pendingOrder = customer;
@@ -307,7 +365,10 @@ exports.handlePaymentSuccess = async (req, res) => {
         notes: "Commande individuelle payée",
       });
     } catch (customerError) {
-      console.error("Erreur enregistrement client, commande confirmée quand même :", customerError);
+      console.error(
+        "Erreur enregistrement client, commande confirmée quand même :",
+        customerError
+      );
     }
 
     try {
@@ -320,9 +381,13 @@ exports.handlePaymentSuccess = async (req, res) => {
         delivery_slot: pendingOrder.delivery_slot_label,
         total_amount: getCartTotal(cart),
       });
+
       console.log("✅ Mail de confirmation envoyé");
     } catch (emailError) {
-      console.error("Erreur envoi mail, commande confirmée quand même :", emailError);
+      console.error(
+        "Erreur envoi mail, commande confirmée quand même :",
+        emailError
+      );
     }
 
     req.session.cart = [];
