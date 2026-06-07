@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <section class="page-intro">
+      <span class="section-badge">Fermeture</span>
+      <h1>La Pause Sandwich est actuellement fermée</h1>
+
+      <p>
+        <%= settings && settings.closure_message
+          ? settings.closure_message
+          : 'La Pause Sandwich est actuellement fermée. Merci pour votre compréhension.' %>
+      </p>
+
+      <p style="margin-top:16px; color:#6b7280;">
+        Les commandes reprendront dès la réouverture.
+      </p>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

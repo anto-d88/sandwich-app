@@ -18,7 +18,7 @@ const formuleRoutes = require('./routes/formule');
 const messageRoutes = require('./routes/messages');
 const adminMessagesRoutes = require('./routes/adminMessages');
 
-const SHOP_CLOSED = process.env.APP_CLOSED === "true";
+const adminService = require('./services/adminService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -56,27 +56,42 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   res.locals.admin = req.session.admin || null;
   res.locals.cart = req.session.cart || [];
-  res.locals.shopClosed = SHOP_CLOSED;
+  res.locals.shopClosed = false;
   next();
 });
 
-app.use((req, res, next) => {
-  if (!SHOP_CLOSED) {
+// fermeture pilotée par le dashboard admin
+app.use(async (req, res, next) => {
+  try {
+    const settings = await adminService.getSettingsMap();
+    const appOpen = settings.app_open !== 'false';
+
+    res.locals.settings = settings;
+    res.locals.shopClosed = !appOpen;
+
+    const isAllowedWhenClosed =
+      req.path === '/login' ||
+      req.path.startsWith('/auth') ||
+      req.path.startsWith('/admin') ||
+      req.path.startsWith('/webhook') ||
+      req.path.startsWith('/css') ||
+      req.path.startsWith('/js') ||
+      req.path.startsWith('/images') ||
+      req.path.startsWith('/assets') ||
+      req.path === '/favicon.ico';
+
+    if (!appOpen && !isAllowedWhenClosed) {
+      return res.status(503).render('closed', {
+        title: 'La Pause Sandwich est fermée',
+        settings
+      });
+    }
+
+    return next();
+  } catch (error) {
+    console.error('Erreur middleware fermeture app:', error);
     return next();
   }
-
-  const isAllowed =
-    req.path === "/" ||
-    req.path.startsWith("/assets") ||
-    req.path.startsWith("/css") ||
-    req.path.startsWith("/images");
-
-  if (isAllowed) {
-    res.locals.shopClosed = true;
-    return next();
-  }
-
-  return res.redirect("/");
 });
 
 // routes
