@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container admin-page">
+    <section class="page-intro">
+      <span class="section-badge">Admin</span>
+
+      <% if (mode === 'edit') { %>
+        <h1>Modifier le produit</h1>
+        <p>Modifie les informations du produit.</p>
+      <% } else { %>
+        <h1>Ajouter un produit</h1>
+        <p>Crée un nouveau produit pour la carte.</p>
+      <% } %>
+    </section>
+
+    <% if (error) { %>
+      <section class="team-error-box">
+        <h2>Erreur</h2>
+        <p><%= error %></p>
+      </section>
+    <% } %>
+
+    <section class="checkout-box">
+      <form
+        action="<%= mode === 'edit' ? `/admin/products/${product.id}/edit` : '/admin/products/new' %>"
+        method="POST"
+        class="checkout-form"
+      >
+        <label>
+          Nom du produit
+          <input
+            type="text"
+            name="name"
+            value="<%= product ? (product.name || '') : '' %>"
+            placeholder="Ex : Croissant pur beurre"
+            required
+          >
+        </label>
+
+        <label>
+          Description
+          <textarea
+            name="description"
+            placeholder="Description du produit"
+            rows="4"
+          ><%= product ? (product.description || '') : '' %></textarea>
+        </label>
+
+        <label>
+          Prix
+          <input
+            type="text"
+            name="price"
+            value="<%= product ? String(product.price || '').replace('.', ',') : '' %>"
+            placeholder="Ex : 1,20"
+            required
+          >
+        </label>
+
+        <label>
+          Catégorie
+          <select name="category" required>
+            <% const currentCategory = product ? product.category : ''; %>
+
+            <option value="">Choisir une catégorie</option>
+            <option value="sandwich" <%= currentCategory === 'sandwich' ? 'selected' : '' %>>Sandwich</option>
+            <option value="salades" <%= currentCategory === 'salades' ? 'selected' : '' %>>Bowls / Salades</option>
+            <option value="boisson" <%= currentCategory === 'boisson' ? 'selected' : '' %>>Boisson</option>
+            <option value="dessert" <%= currentCategory === 'dessert' ? 'selected' : '' %>>Dessert</option>
+            <option value="breakfast" <%= currentCategory === 'breakfast' ? 'selected' : '' %>>Petit-déjeuner</option>
+          </select>
+        </label>
+
+        <label>
+          URL image
+          <input
+            type="text"
+            name="image_url"
+            value="<%= product ? (product.image_url || '') : '' %>"
+            placeholder="/images/default-product.jpg"
+          >
+        </label>
+
+        <label>
+          Stock
+          <input
+            type="number"
+            name="stock_quantity"
+            value="<%= product ? (product.stock_quantity || 0) : 0 %>"
+            min="0"
+            required
+          >
+        </label>
+
+        <label style="display:flex; align-items:center; gap:10px;">
+          <input
+            type="checkbox"
+            name="is_available"
+            <%= !product || product.is_available ? 'checked' : '' %>
+          >
+          Produit disponible
+        </label>
+
+        <button type="submit" class="btn btn-primary">
+          <%= mode === 'edit' ? 'Enregistrer les modifications' : 'Créer le produit' %>
+        </button>
+      </form>
+    </section>
+
+    <p style="margin-top: 24px;">
+      <a href="/admin/products">← Retour produits</a>
+    </p>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

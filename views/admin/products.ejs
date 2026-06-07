@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('../partials/head') %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container admin-page">
+    <section class="page-intro">
+      <span class="section-badge">Admin</span>
+      <h1>Gestion des produits</h1>
+      <p>Ajoute, modifie ou désactive les produits de La Pause Sandwich.</p>
+    </section>
+
+    <section class="menu-top-banner">
+      <div>
+        <strong>Produits</strong>
+        <p>Pour les petits-déjeuners, utilise la catégorie <strong>breakfast</strong>.</p>
+      </div>
+      <div>
+        <a href="/admin/products/new" class="btn btn-primary">Ajouter un produit</a>
+      </div>
+    </section>
+
+    <section class="admin-order-card" style="margin-top: 24px;">
+      <h2>Liste des produits</h2>
+
+      <% if (!products.length) { %>
+        <p>Aucun produit enregistré.</p>
+      <% } else { %>
+        <% products.forEach(product => { %>
+          <div class="checkout-item">
+            <div>
+              <strong>#<%= product.id %> — <%= product.name %></strong><br>
+              <span>
+                Catégorie : <%= product.category %> •
+                Prix : <%= Number(product.price || 0).toFixed(2).replace('.', ',') %> € •
+                Stock : <%= product.stock_quantity || 0 %>
+              </span><br>
+
+              <% if (product.is_available) { %>
+                <span style="color:#15803d;">🟢 Disponible</span>
+              <% } else { %>
+                <span style="color:#b91c1c;">🔴 Masqué / indisponible</span>
+              <% } %>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <a href="/admin/products/<%= product.id %>/edit" class="btn btn-primary">
+                Modifier
+              </a>
+
+              <form action="/admin/products/<%= product.id %>/toggle-availability" method="POST">
+                <% if (product.is_available) { %>
+                  <button type="submit" class="btn btn-danger">Désactiver</button>
+                <% } else { %>
+                  <button type="submit" class="btn btn-primary">Activer</button>
+                <% } %>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <p style="margin-top: 24px;">
+      <a href="/admin/dashboard">← Retour dashboard</a>
+    </p>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

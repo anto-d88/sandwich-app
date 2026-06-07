@@ -10,6 +10,7 @@ const pagesRoutes = require('./routes/pages');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/order');
 const adminRoutes = require('./routes/admin');
+const adminProductsRoutes = require('./routes/adminProducts');
 const authRoutes = require('./routes/auth');
 const webhookRoutes = require('./routes/webhook');
 const teamOrderRoutes = require('./routes/teamOrder');
@@ -64,12 +65,11 @@ app.use((req, res, next) => {
     return next();
   }
 
-
-const isAllowed =
-  req.path === "/" ||
-  req.path.startsWith("/assets") ||
-  req.path.startsWith("/css") ||
-  req.path.startsWith("/images");
+  const isAllowed =
+    req.path === "/" ||
+    req.path.startsWith("/assets") ||
+    req.path.startsWith("/css") ||
+    req.path.startsWith("/images");
 
   if (isAllowed) {
     res.locals.shopClosed = true;
@@ -84,6 +84,7 @@ app.use('/', pagesRoutes);
 app.use('/cart', cartRoutes);
 app.use('/order', orderRoutes);
 app.use('/admin', adminRoutes);
+app.use('/admin/products', adminProductsRoutes);
 app.use('/auth', authRoutes);
 app.use('/team-order', teamOrderRoutes);
 app.use('/formule', formuleRoutes);
