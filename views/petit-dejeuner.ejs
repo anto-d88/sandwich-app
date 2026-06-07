@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container menu-page">
+    <section class="page-intro">
+      <span class="section-badge">Petit-déjeuner entreprise</span>
+      <h1>Petits-déjeuners d’équipe livrés en entreprise</h1>
+      <p>
+        Formules simples pour réunions, formations, accueils de nouveaux collaborateurs
+        et équipes du matin.
+      </p>
+
+      <p style="margin-top:8px; color:#15803d; font-weight:700;">
+        Livraison disponible sur créneaux : 8h, 9h, 10h et 11h.
+      </p>
+    </section>
+
+    <section class="menu-top-banner">
+      <div>
+        <strong>Offre pensée pour les entreprises</strong>
+        <p>Choisissez une formule prête ou composez votre propre petit-déjeuner.</p>
+      </div>
+
+      <div>
+        <a href="/menu" class="btn btn-secondary">Retour au menu</a>
+      </div>
+    </section>
+
+    <section class="page-intro" style="margin-top: 34px;">
+      <h2>☀️ Formules suggérées</h2>
+      <p>Le plus simple pour les RH, réunions et formations.</p>
+    </section>
+
+    <section class="products-grid">
+      <% if (!breakfastFormulas.length) { %>
+        <div class="empty-box">
+          <p>Aucune formule petit-déjeuner disponible pour le moment.</p>
+        </div>
+      <% } else { %>
+        <% breakfastFormulas.forEach(product => { %>
+          <article class="product-card product-card--pro">
+            <div class="product-image-wrap">
+              <img
+                src="<%= product.image_url || '/images/default-product.jpg' %>"
+                alt="<%= product.name %>"
+                class="product-image"
+              >
+            </div>
+
+            <div class="product-card__content">
+              <span class="product-category">formule entreprise</span>
+              <h2><%= product.name %></h2>
+              <p class="product-description">
+                <%= product.description || 'Formule petit-déjeuner pour entreprise.' %>
+              </p>
+
+              <% if (product.stock_quantity <= 0) { %>
+                <span class="product-badge product-badge--danger">Rupture</span>
+                <p class="stock-warning stock-warning--danger">❌ Indisponible</p>
+                <button class="btn btn-danger" disabled>Indisponible</button>
+              <% } else { %>
+                <p class="stock-ok">✔ Disponible</p>
+
+                <div class="product-bottom">
+                  <p class="product-price">
+                    <%= Number(product.price).toFixed(2).replace('.', ',') %> €
+                  </p>
+
+                  <form action="/cart/add" method="POST" class="product-form-inline">
+                    <input type="hidden" name="id" value="<%= product.id %>">
+                    <input
+                      type="number"
+                      name="quantity"
+                      value="1"
+                      min="1"
+                      max="<%= product.stock_quantity %>"
+                      class="qty-input"
+                    >
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                  </form>
+                </div>
+              <% } %>
+            </div>
+          </article>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="page-intro" style="margin-top: 42px;">
+      <h2>🧩 Composer une formule personnalisée</h2>
+      <p>Pour 5, 10, 20 personnes ou plus. Tu choisis les quantités.</p>
+    </section>
+
+    <section class="checkout-box" style="margin-top: 18px;">
+      <form action="/cart/add-breakfast-custom" method="POST" class="checkout-form">
+        <label>
+          Nombre de personnes
+          <input type="number" name="people_count" value="10" min="5" required>
+        </label>
+
+        <label>
+          Croissants
+          <input type="number" name="croissants" value="5" min="0" required>
+        </label>
+
+        <label>
+          Pains au chocolat
+          <input type="number" name="pains_chocolat" value="5" min="0" required>
+        </label>
+
+        <label>
+          Cafés
+          <input type="number" name="cafes" value="10" min="0" required>
+        </label>
+
+        <label>
+          Thés
+          <input type="number" name="thes" value="0" min="0" required>
+        </label>
+
+        <label>
+          Jus d’orange
+          <input type="number" name="jus_orange" value="0" min="0" required>
+        </label>
+
+        <button type="submit" class="btn btn-primary">
+          Ajouter la formule personnalisée
+        </button>
+      </form>
+
+      <p style="margin-top:16px; color:#6b7280;">
+        Prix calculé automatiquement : croissant 1,20€, pain au chocolat 1,30€,
+        café 1,50€, thé 1,50€, jus d’orange 2,00€.
+      </p>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

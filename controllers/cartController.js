@@ -1,87 +1,5 @@
 const supabase = require('../config/supabaseClient');
 const getCartTotal = require('../utils/getCartTotal');
-const orderService = require('../services/orderService');
-
-const SHOP_OPEN = true;
-
-const MAX_ORDERS_PER_SLOT = 10;
-const DELIVERY_SLOTS = ["11:00", "12:30"];
-function getParisNow() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
-}
-
-function formatHour(slotTime) {
-  return slotTime.replace(':00', 'h');
-}
-
-function getDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function createSlotDate(slotTime, dayOffset = 0) {
-  const now = getParisNow();
-  const [hours, minutes] = slotTime.split(':').map(Number);
-
-  const slotDate = new Date(now);
-  slotDate.setDate(slotDate.getDate() + dayOffset);
-  slotDate.setHours(hours, minutes, 0, 0);
-
-  return slotDate;
-}
-
-function isTodaySlotClosed(slotTime) {
-  const now = getParisNow();
-  const slotDate = createSlotDate(slotTime, 0);
-  const cutoffMinutes = slotTime === "12:30" ? 90 : 50;
-const cutoffDate = new Date(slotDate.getTime() - cutoffMinutes * 60 * 1000);
-
-  return now >= cutoffDate;
-}
-
-function getEffectiveSlot(slotTime) {
-  const closedToday = isTodaySlotClosed(slotTime);
-  const dayOffset = closedToday ? 1 : 0;
-  const slotDate = createSlotDate(slotTime, dayOffset);
-
-  const dayLabel = dayOffset === 0 ? 'Aujourd’hui' : 'Demain';
-  const hourLabel = formatHour(slotTime);
-  const label = `${dayLabel} ${hourLabel}`;
-  const value = `${getDateKey(slotDate)}|${slotTime}`;
-
-  return {
-    time: slotTime,
-    value,
-    label,
-    dayLabel,
-    hourLabel,
-    dateKey: getDateKey(slotDate),
-    isTomorrow: dayOffset === 1
-  };
-}
-
-async function getSlotsWithAvailability() {
-  const slots = [];
-
-  for (const slotTime of DELIVERY_SLOTS) {
-    const effectiveSlot = getEffectiveSlot(slotTime);
-    const count = await orderService.countOrdersBySlot(effectiveSlot.value);
-    const isFull = count >= MAX_ORDERS_PER_SLOT;
-
-    slots.push({
-      ...effectiveSlot,
-      count,
-      max: MAX_ORDERS_PER_SLOT,
-      isFull,
-      isClosed: false,
-      isUnavailable: isFull
-    });
-  }
-
-  return slots;
-}
 
 function normalizeArray(value) {
   if (Array.isArray(value)) return value;
@@ -128,6 +46,32 @@ function buildSandwichOptions(product, body) {
     finalPrice,
     finalName: `${product.name} (${options.join(', ')})`
   };
+}
+
+function safePositiveNumber(value, fallback = 0) {
+  const number = Number(value || fallback);
+
+  if (Number.isNaN(number) || number < 0) {
+    return fallback;
+  }
+
+  return number;
+}
+
+function calculateBreakfastCustomPrice({
+  croissants,
+  painsChocolat,
+  cafes,
+  thes,
+  jusOrange
+}) {
+  return (
+    croissants * 1.20 +
+    painsChocolat * 1.30 +
+    cafes * 1.50 +
+    thes * 1.50 +
+    jusOrange * 2.00
+  );
 }
 
 exports.getCartPage = (req, res) => {
@@ -198,7 +142,9 @@ exports.addToCart = async (req, res) => {
         id: product.id,
         name: finalName,
         price: finalPrice,
-        quantity
+        quantity,
+        category: product.category || null,
+        is_custom: false
       });
     }
 
@@ -207,6 +153,71 @@ exports.addToCart = async (req, res) => {
   } catch (error) {
     console.error('Erreur addToCart:', error);
     res.status(500).send('Erreur panier');
+  }
+};
+
+exports.addBreakfastCustomToCart = async (req, res) => {
+  try {
+    const peopleCount = safePositiveNumber(req.body.people_count, 5);
+    const croissants = safePositiveNumber(req.body.croissants, 0);
+    const painsChocolat = safePositiveNumber(req.body.pains_chocolat, 0);
+    const cafes = safePositiveNumber(req.body.cafes, 0);
+    const thes = safePositiveNumber(req.body.thes, 0);
+    const jusOrange = safePositiveNumber(req.body.jus_orange, 0);
+
+    if (peopleCount < 5) {
+      return res.send('La formule personnalisée commence à partir de 5 personnes.');
+    }
+
+    const totalItems = croissants + painsChocolat + cafes + thes + jusOrange;
+
+    if (totalItems <= 0) {
+      return res.send('Ajoutez au moins un élément à la formule petit-déjeuner.');
+    }
+
+    const price = calculateBreakfastCustomPrice({
+      croissants,
+      painsChocolat,
+      cafes,
+      thes,
+      jusOrange
+    });
+
+    const details = [
+      `${peopleCount} personne(s)`,
+      croissants > 0 ? `${croissants} croissant(s)` : null,
+      painsChocolat > 0 ? `${painsChocolat} pain(s) au chocolat` : null,
+      cafes > 0 ? `${cafes} café(s)` : null,
+      thes > 0 ? `${thes} thé(s)` : null,
+      jusOrange > 0 ? `${jusOrange} jus d’orange` : null
+    ].filter(Boolean);
+
+    const cart = req.session.cart || [];
+
+    cart.push({
+      id: `breakfast-custom-${Date.now()}`,
+      product_id: null,
+      name: `Formule petit-déjeuner personnalisée (${details.join(', ')})`,
+      price,
+      quantity: 1,
+      category: 'breakfast',
+      is_custom: true,
+      breakfast_details: {
+        people_count: peopleCount,
+        croissants,
+        pains_chocolat: painsChocolat,
+        cafes,
+        thes,
+        jus_orange: jusOrange
+      }
+    });
+
+    req.session.cart = cart;
+
+    res.redirect('/cart');
+  } catch (error) {
+    console.error('Erreur addBreakfastCustomToCart:', error);
+    res.status(500).send('Erreur formule petit-déjeuner');
   }
 };
 
@@ -221,32 +232,5 @@ exports.removeFromCart = (req, res) => {
 };
 
 exports.getCheckoutPage = async (req, res) => {
-  if (!SHOP_OPEN) {
-    return res.render('checkout-closed', {
-      title: 'Commandes fermées'
-    });
-  }
-
-  try {
-    const cart = req.session.cart || [];
-
-    if (!cart.length) {
-      return res.redirect('/cart');
-    }
-
-    const total = getCartTotal(cart);
-    const slots = await getSlotsWithAvailability();
-
-    res.render('checkout', {
-      title: 'Finaliser la commande',
-      cart,
-      total,
-      slots,
-      error: null,
-      old: {}
-    });
-  } catch (error) {
-    console.error('Erreur getCheckoutPage:', error);
-    res.status(500).send('Erreur checkout');
-  }
+  res.redirect('/order/checkout');
 };

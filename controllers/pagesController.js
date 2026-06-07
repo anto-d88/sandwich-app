@@ -34,6 +34,38 @@ exports.getMenuPage = async (req, res) => {
   }
 };
 
+exports.getBreakfastPage = async (req, res) => {
+  try {
+    const settings = await adminService.getSettingsMap();
+
+    if (settings.app_open === 'false') {
+      return res.redirect('/menu');
+    }
+
+    if (settings.breakfast_open !== 'true') {
+      return res.redirect('/menu');
+    }
+
+    const products = await productService.getAllAvailableProducts(settings);
+
+    const breakfastFormulas = products.filter((product) => {
+      const category = String(product.category || '').toLowerCase();
+      const name = String(product.name || '').toLowerCase();
+
+      return category === 'breakfast' && name.includes('formule');
+    });
+
+    res.render('petit-dejeuner', {
+      title: 'Petit-déjeuner entreprise',
+      settings,
+      breakfastFormulas
+    });
+  } catch (error) {
+    console.error('Erreur getBreakfastPage:', error);
+    res.status(500).send('Erreur serveur');
+  }
+};
+
 exports.getProductPage = async (req, res) => {
   try {
     const settings = await adminService.getSettingsMap();

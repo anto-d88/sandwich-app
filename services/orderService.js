@@ -115,6 +115,7 @@ async function createOrderWithItems(orderPayload, cart) {
   const total = cart.reduce((sum, item) => {
     return sum + Number(item.price || 0) * Number(item.quantity || 0);
   }, 0);
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert([
@@ -131,7 +132,7 @@ async function createOrderWithItems(orderPayload, cart) {
 
   const orderItems = cart.map((item) => ({
     order_id: order.id,
-    product_id: Number(item.id) || null,
+    product_id: item.is_custom ? null : Number(item.id) || null,
     product_name: item.name,
     unit_price: Number(item.price || 0),
     quantity: Number(item.quantity || 0),
@@ -172,6 +173,10 @@ async function countOrdersBySlot(deliverySlot) {
 
 async function checkStockBeforeOrder(cart) {
   for (const item of cart) {
+    if (item.is_custom) {
+      continue;
+    }
+
     if (item.is_formula && item.formula_items) {
       for (const subItem of item.formula_items) {
         await checkSingleProductStock(subItem.id, item.quantity);
@@ -232,6 +237,10 @@ async function decrementSingleProductStock(productId, quantity) {
 
 async function decrementStockFromCart(cart) {
   for (const item of cart) {
+    if (item.is_custom) {
+      continue;
+    }
+
     if (item.is_formula && item.formula_items) {
       for (const subItem of item.formula_items) {
         await decrementSingleProductStock(subItem.id, item.quantity);
