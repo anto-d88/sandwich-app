@@ -11,30 +11,37 @@
       <span class="section-badge">Petit-déjeuner entreprise</span>
       <h1>Petits-déjeuners d’équipe livrés en entreprise</h1>
       <p>
-        Formules simples pour réunions, formations, accueils de nouveaux collaborateurs
-        et équipes du matin.
+        Commandez facilement un petit-déjeuner pour vos réunions, formations,
+        accueils de nouveaux collaborateurs ou équipes du matin.
       </p>
 
-      <p style="margin-top:8px; color:#15803d; font-weight:700;">
+      <p style="margin-top:10px; color:#15803d; font-weight:800;">
         Livraison disponible sur créneaux : 8h, 9h, 10h et 11h.
       </p>
     </section>
 
-    <section class="team-error-box" style="margin-top:18px;">
-      <h2>📅 Règle de commande</h2>
-      <p>
+    <section style="
+      margin-top:20px;
+      padding:20px;
+      border-radius:18px;
+      background:#fff7ed;
+      border:1px solid #fed7aa;
+    ">
+      <h2 style="margin-bottom:8px;">⏰ À savoir avant de commander</h2>
+      <p style="font-size:16px; line-height:1.6;">
         Les petits-déjeuners doivent être commandés au plus tard
         <strong>la veille avant 16h</strong>.
       </p>
-      <p>
-        Si la limite est dépassée, la première date disponible sera automatiquement décalée.
+      <p style="margin-top:8px; color:#9a3412;">
+        Exemple : pour une livraison mardi matin, la commande doit être validée
+        lundi avant 16h.
       </p>
     </section>
 
-    <section class="menu-top-banner">
+    <section class="menu-top-banner" style="margin-top:22px;">
       <div>
-        <strong>Offre pensée pour les entreprises</strong>
-        <p>Choisissez une date, un créneau, puis une formule prête ou personnalisée.</p>
+        <strong>Fonctionnement simple</strong>
+        <p>1. Choisissez une date • 2. Choisissez un créneau • 3. Sélectionnez une formule</p>
       </div>
 
       <div>
@@ -43,7 +50,12 @@
     </section>
 
     <section class="checkout-box" style="margin-top: 24px;">
-      <h2>1. Choisir la livraison</h2>
+      <h2>1. Date et créneau de livraison</h2>
+
+      <p style="margin-bottom:16px; color:#6b7280;">
+        Le calendrier bloque automatiquement les dates trop proches lorsque la limite
+        de commande est dépassée.
+      </p>
 
       <div class="checkout-form">
         <label>
@@ -61,22 +73,37 @@
           </select>
         </label>
 
-        <p id="breakfastDeliveryInfo" style="margin-top:12px; color:#15803d; font-weight:700;"></p>
+        <div id="breakfastDeliveryInfo" style="
+          margin-top:16px;
+          padding:14px;
+          background:#f0fdf4;
+          border:1px solid #bbf7d0;
+          border-radius:12px;
+          color:#15803d;
+          font-weight:800;
+        "></div>
       </div>
     </section>
 
-    <section class="page-intro" style="margin-top: 34px;">
+    <section class="page-intro" style="margin-top: 38px;">
       <h2>2. Formules suggérées</h2>
-      <p>Le plus simple pour les RH, réunions et formations.</p>
+      <p>
+        Des formules prêtes à commander pour gagner du temps.
+      </p>
     </section>
 
     <section class="products-grid">
-      <% if (!breakfastFormulas.length) { %>
+      <% const fixedFormulas = breakfastFormulas.filter(product => {
+        const name = String(product.name || '').toLowerCase();
+        return !name.includes('personnalisée') && !name.includes('personnalisee');
+      }); %>
+
+      <% if (!fixedFormulas.length) { %>
         <div class="empty-box">
           <p>Aucune formule petit-déjeuner disponible pour le moment.</p>
         </div>
       <% } else { %>
-        <% breakfastFormulas.forEach(product => { %>
+        <% fixedFormulas.forEach(product => { %>
           <article class="product-card product-card--pro">
             <div class="product-image-wrap">
               <img
@@ -89,6 +116,7 @@
             <div class="product-card__content">
               <span class="product-category">formule entreprise</span>
               <h2><%= product.name %></h2>
+
               <p class="product-description">
                 <%= product.description || 'Formule petit-déjeuner pour entreprise.' %>
               </p>
@@ -119,7 +147,9 @@
                       class="qty-input"
                     >
 
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                    <button type="submit" class="btn btn-primary">
+                      Ajouter
+                    </button>
                   </form>
                 </div>
               <% } %>
@@ -129,12 +159,28 @@
       <% } %>
     </section>
 
-    <section class="page-intro" style="margin-top: 42px;">
+    <section class="page-intro" style="margin-top: 46px;">
       <h2>3. Composer une formule personnalisée</h2>
-      <p>Pour 5, 10, 20 personnes ou plus. Vous choisissez les quantités.</p>
+      <p>
+        Pour 5, 10, 20 personnes ou plus. Vous choisissez exactement les quantités.
+      </p>
     </section>
 
     <section class="checkout-box" style="margin-top: 18px;">
+      <div style="
+        margin-bottom:18px;
+        padding:14px;
+        border-radius:12px;
+        background:#f8fafc;
+        border:1px solid #e5e7eb;
+      ">
+        <strong>Formule personnalisée</strong>
+        <p style="margin-top:6px; color:#6b7280;">
+          Idéal si vous avez une équipe avec des besoins différents : plus de cafés,
+          plus de jus d’orange, moins de viennoiseries, etc.
+        </p>
+      </div>
+
       <form action="/cart/add-breakfast-custom" method="POST" class="checkout-form breakfast-custom-form">
         <input type="hidden" name="delivery_date" class="breakfast-delivery-date-input">
         <input type="hidden" name="delivery_time" class="breakfast-delivery-time-input">
@@ -245,7 +291,8 @@
 
       if (selectedDate && selectedTime) {
         const timeLabel = selectedTime.replace(':00', 'h');
-        infoBox.textContent = `Livraison prévue le ${formatFrenchDate(selectedDate)} à ${timeLabel}.`;
+        infoBox.textContent =
+          `Livraison prévue le ${formatFrenchDate(selectedDate)} à ${timeLabel}.`;
       }
     }
 
